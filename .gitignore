@@ -1,0 +1,7 @@
+# OS / editor cruft. backend/ and mobile/ each have their own .gitignore for
+# language/framework-specific exclusions (venv, node_modules, .env, etc.)
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
