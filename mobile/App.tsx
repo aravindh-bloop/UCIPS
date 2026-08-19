@@ -10,7 +10,8 @@ import {
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { View, Image, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import BrandSplash from './src/components/BrandSplash';
@@ -39,6 +40,22 @@ export default function App() {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
+  const [showCover, setShowCover] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowCover(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showCover) {
+    return (
+      <View style={styles.coverContainer}>
+        <Image source={require('./assets/cover.png')} style={styles.coverImage} resizeMode="cover" />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -62,3 +79,16 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  coverContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+});

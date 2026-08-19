@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-import hdbscan
+from sklearn.cluster import HDBSCAN
 import numpy as np
 from sqlalchemy.orm import Session
 
@@ -56,7 +56,7 @@ def recompute_all_clusters(db: Session) -> list[Cluster]:
         # (it's tuned for finding varying-density structure, not "is this one dense blob").
         # This setting is much closer to a plain radius-based grouping, which is what a
         # "demand hotspot" actually means here, while still genuinely running HDBSCAN.
-        clusterer = hdbscan.HDBSCAN(
+        clusterer = HDBSCAN(
             min_cluster_size=MIN_CLUSTER_SIZE,
             min_samples=1,
             cluster_selection_epsilon=0.0035,  # ~390m
