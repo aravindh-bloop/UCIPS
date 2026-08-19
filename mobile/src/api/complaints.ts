@@ -16,6 +16,10 @@ export function listMine(token: string): Promise<ComplaintOut[]> {
   return request<ComplaintOut[]>('/api/complaints', { token });
 }
 
+export function listAll(token: string): Promise<ComplaintOut[]> {
+  return request<ComplaintOut[]>('/api/complaints', { token });
+}
+
 export function getOne(token: string, id: number): Promise<ComplaintOut> {
   return request<ComplaintOut>(`/api/complaints/${id}`, { token });
 }

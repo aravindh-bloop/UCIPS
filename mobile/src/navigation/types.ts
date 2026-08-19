@@ -25,10 +25,12 @@ export type CitizenTabParamList = {
 export type AuthorityStackParamList = {
   AuthorityTabs: undefined;
   HotspotDetail: { clusterId: number };
+  ComplaintDetail: { complaintId: number };
 };
 
 export type AuthorityTabParamList = {
   Hotspots: undefined;
+  Reports: undefined;
   Projects: undefined;
   Budget: undefined;
   Profile: undefined;

@@ -43,11 +43,11 @@ def recompute_all_clusters(db: Session) -> list[Cluster]:
     for category in categories:
         complaints = db.query(Complaint).filter(Complaint.category == category).all()
 
-        for c in complaints:
-            c.cluster_id = None
-
         if len(complaints) < MIN_CLUSTER_SIZE:
             continue
+
+        for c in complaints:
+            c.cluster_id = None
 
         coords = np.array([[c.lat, c.lng] for c in complaints])
         # allow_single_cluster + a modest cluster_selection_epsilon matter here: with only

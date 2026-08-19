@@ -31,7 +31,7 @@ Given a citizen's complaint (raw text, possibly in a regional language, translit
 - category: the single best-fitting infrastructure category from the allowed list
 - description: a clean, concise English restatement of the problem (1-2 sentences)
 - severity: an integer 1-5 (1 = minor inconvenience, 5 = urgent public safety hazard)
-- follow_up_question: ONE short clarifying question to ask the citizen if the complaint is vague or missing a key detail (e.g. exact location, how long it's been an issue). Leave this as an empty string if the complaint is already clear enough.
+- follow_up_question: ONE short clarifying question to ask the citizen if the complaint is vague or missing a key detail that would help fix it (e.g. how long it's been an issue, whether it's affecting many people, a nearby landmark). The citizen's GPS location is already captured separately and attached to every report automatically, so NEVER ask for their location, address, or "where is this" -- that is always already known. Leave follow_up_question as an empty string if the complaint is already clear enough.
 Always respond in English regardless of the input language."""
 
 

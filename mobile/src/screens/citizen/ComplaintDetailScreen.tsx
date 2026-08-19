@@ -12,10 +12,10 @@ import { useAuth } from '../../auth/AuthContext';
 import { API_BASE_URL } from '../../config';
 import { Button, Card, Input, Screen, SeverityChip, Skeleton, StatusChip, Text, useToast } from '../../components/ui';
 import { haptics } from '../../lib/haptics';
-import { CitizenStackParamList } from '../../navigation/types';
+import { CitizenStackParamList, AuthorityStackParamList } from '../../navigation/types';
 import { categoryStyle, palette, radii, spacing, spring } from '../../theme';
 
-type Props = NativeStackScreenProps<CitizenStackParamList, 'ComplaintDetail'>;
+type Props = NativeStackScreenProps<CitizenStackParamList | AuthorityStackParamList, 'ComplaintDetail'>;
 
 export default function ComplaintDetailScreen({ route }: Props) {
   const { complaintId } = route.params;

@@ -1,4 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ComplaintDetailScreen from '../screens/citizen/ComplaintDetailScreen';
 import HotspotDetailScreen from '../screens/authority/HotspotDetailScreen';
 import AuthorityTabs from './AuthorityTabs';
 import { modalScreenOptions, screenOptions } from './screenOptions';
@@ -11,6 +12,7 @@ export default function AuthorityStack() {
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="AuthorityTabs" component={AuthorityTabs} options={{ headerShown: false }} />
       <Stack.Screen name="HotspotDetail" component={HotspotDetailScreen} options={{ ...modalScreenOptions, title: 'Hotspot Complaints' }} />
+      <Stack.Screen name="ComplaintDetail" component={ComplaintDetailScreen} options={{ ...modalScreenOptions, title: 'Report Detail' }} />
     </Stack.Navigator>
   );
 }

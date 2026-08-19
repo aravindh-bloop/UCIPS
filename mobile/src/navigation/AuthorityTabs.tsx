@@ -1,4 +1,5 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import AllComplaintsScreen from '../screens/authority/AllComplaintsScreen';
 import BudgetOptimizerScreen from '../screens/authority/BudgetOptimizerScreen';
 import HotspotsScreen from '../screens/authority/HotspotsScreen';
 import ProjectsScreen from '../screens/authority/ProjectsScreen';
@@ -12,6 +13,7 @@ export default function AuthorityTabs() {
   return (
     <Tab.Navigator tabBar={(props) => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Hotspots" component={HotspotsScreen} options={{ title: 'Hotspots' }} />
+      <Tab.Screen name="Reports" component={AllComplaintsScreen} options={{ title: 'Reports' }} />
       <Tab.Screen name="Projects" component={ProjectsScreen} options={{ title: 'Projects' }} />
       <Tab.Screen name="Budget" component={BudgetOptimizerScreen} options={{ title: 'Budget' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />

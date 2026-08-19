@@ -9,7 +9,8 @@ interface AuthContextValue {
   token: string | null;
   loading: boolean;
   login: (identifier: string, password: string) => Promise<void>;
-  register: (payload: authApi.RegisterPayload) => Promise<void>;
+  registerStart: (payload: authApi.RegisterStartPayload) => Promise<authApi.RegisterStartResult>;
+  registerVerify: (phone: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -48,8 +49,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(result.user);
   }
 
-  async function register(payload: authApi.RegisterPayload) {
-    const result = await authApi.register(payload);
+  async function registerStart(payload: authApi.RegisterStartPayload) {
+    return authApi.registerStart(payload);
+  }
+
+  async function registerVerify(phone: string, otp: string) {
+    const result = await authApi.registerVerify(phone, otp);
     await saveToken(result);
     setToken(result.access_token);
     setUser(result.user);
@@ -61,7 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  return <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, token, loading, login, registerStart, registerVerify, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {

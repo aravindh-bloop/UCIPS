@@ -3,13 +3,27 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class UserRegister(BaseModel):
+class RegisterStartRequest(BaseModel):
     name: str
-    phone: str | None = None
+    phone: str
     email: str | None = None
     password: str
     role: str = "citizen"  # citizen | authority
     preferred_language: str = "en"
+    aadhaar_number: str
+
+
+class RegisterStartResponse(BaseModel):
+    message: str
+    expires_in_seconds: int
+    # Only populated because no SMS gateway is wired up yet (Twilio deferred) -- there is no
+    # real delivery channel, so the OTP is returned directly instead of silently going nowhere.
+    dev_otp: str | None = None
+
+
+class RegisterVerifyRequest(BaseModel):
+    phone: str
+    otp: str
 
 
 class UserLogin(BaseModel):
@@ -26,6 +40,8 @@ class UserOut(BaseModel):
     email: str | None
     role: str
     preferred_language: str
+    aadhaar_last4: str | None
+    phone_verified: bool
     created_at: datetime
 
 

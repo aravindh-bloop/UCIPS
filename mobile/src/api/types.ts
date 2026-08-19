@@ -21,6 +21,8 @@ export interface User {
   email: string | null;
   role: Role;
   preferred_language: string;
+  aadhaar_last4: string | null;
+  phone_verified: boolean;
   created_at: string;
 }
 
