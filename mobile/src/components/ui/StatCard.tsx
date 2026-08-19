@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
-import { palette, radii, spacing } from '../../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { palette, radii, spacing, shadows } from '../../theme';
 import { AnimatedNumber } from './AnimatedNumber';
 import { Text } from './Text';
 
@@ -12,25 +13,37 @@ interface StatCardProps {
   suffix?: string;
   grouped?: boolean;
   color?: string;
-  icon?: string;
+  icon?: string; // Ionicon name or emoji
   style?: ViewStyle;
 }
 
-/** Compact metric tile with a count-up value. Used in headers and summary rows. */
 export function StatCard({ label, value, decimals, prefix, suffix, grouped, color = palette.primary, icon, style }: StatCardProps) {
+  const isIonicon = icon && icon.length > 2;
+
   return (
     <View style={[styles.card, style]}>
-      {icon ? <Text style={styles.icon}>{icon}</Text> : null}
+      {icon ? (
+        <View style={[styles.iconCircle, { backgroundColor: color }]}>
+          {isIonicon ? (
+            <Ionicons name={icon as any} size={20} color={palette.white} />
+          ) : (
+            <Text style={styles.emoji}>{icon}</Text>
+          )}
+        </View>
+      ) : null}
+      
       <AnimatedNumber
         value={value}
         decimals={decimals}
         prefix={prefix}
         suffix={suffix}
         grouped={grouped}
-        variant="h2"
-        color={color}
+        variant="h1" // Make the number very large
+        color={palette.text}
+        style={styles.number}
       />
-      <Text variant="caption" muted numberOfLines={1}>
+      
+      <Text variant="caption" muted>
         {label}
       </Text>
     </View>
@@ -42,15 +55,26 @@ export function StatRow({ children, style }: { children: ReactNode; style?: View
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: spacing.md },
+  row: { flexDirection: 'row', gap: spacing.md, justifyContent: 'space-between' },
   card: {
     flex: 1,
     backgroundColor: palette.surface,
-    borderRadius: radii.md,
+    borderRadius: radii.xl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    ...shadows.sm,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: palette.border,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    alignItems: 'flex-start',
   },
-  icon: { fontSize: 15, marginBottom: spacing.xxs },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  emoji: { fontSize: 18 },
+  number: { marginBottom: spacing.xs },
 });

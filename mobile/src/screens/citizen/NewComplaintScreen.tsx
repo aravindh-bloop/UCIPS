@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -33,7 +34,7 @@ import {
   type Segment,
 } from '../../components/ui';
 import { haptics } from '../../lib/haptics';
-import { CitizenTabScreenProps } from '../../navigation/types';
+import { CitizenTabScreenProps, CitizenTabParamList } from '../../navigation/types';
 import { palette, radii, shadows, spacing, TAB_BAR_HEIGHT } from '../../theme';
 
 type Props = CitizenTabScreenProps<'Report'>;
@@ -46,11 +47,21 @@ const MODES: Segment<Mode>[] = [
 ];
 
 export default function NewComplaintScreen({ navigation }: Props) {
+  const route = useRoute<RouteProp<CitizenTabParamList, 'Report'>>();
+  const initialMode = route.params?.initialMode ?? 'text';
+
   const { token } = useAuth();
   const toast = useToast();
   const insets = useSafeAreaInsets();
 
-  const [mode, setMode] = useState<Mode>('text');
+  const [mode, setMode] = useState<Mode>(initialMode as Mode);
+
+  useEffect(() => {
+    if (route.params?.initialMode) {
+      setMode(route.params.initialMode as Mode);
+    }
+  }, [route.params?.initialMode]);
+
   const [text, setText] = useState('');
   const [caption, setCaption] = useState('');
   const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -62,6 +73,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationName, setLocationName] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ComplaintOut | null>(null);
@@ -95,15 +107,29 @@ export default function NewComplaintScreen({ navigation }: Props) {
         toast.error('Location permission denied');
         return;
       }
-      const position = await Location.getCurrentPositionAsync({});
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
       haptics.success();
+
+      const [geocode] = await Location.reverseGeocodeAsync({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+
+      if (geocode) {
+        const area = geocode.city || geocode.subregion || geocode.region || geocode.name;
+        if (area) setLocationName(area);
+      }
     } catch {
       toast.error('Could not get your location');
     } finally {
       setLocating(false);
     }
   }, [toast]);
+
+  useEffect(() => {
+    void captureLocation();
+  }, [captureLocation]);
 
   async function startRecording() {
     try {
@@ -418,7 +444,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
           <Ionicons name="location" size={17} color={coords ? palette.white : palette.primary} />
         </View>
         <View style={styles.locationText}>
-          <Text variant="label">{coords ? 'Location captured' : locating ? 'Getting location…' : 'Add your location'}</Text>
+          <Text variant="label">{coords ? (locationName || 'Location captured') : locating ? 'Getting location…' : 'Add your location'}</Text>
           <Text variant="caption" muted>
             {coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'Required — pins your report on the map'}
           </Text>

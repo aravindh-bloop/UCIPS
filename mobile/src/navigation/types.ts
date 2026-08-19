@@ -11,11 +11,13 @@ export type AuthStackParamList = {
 export type CitizenStackParamList = {
   CitizenTabs: undefined;
   ComplaintDetail: { complaintId: number };
+  Menu: undefined;
+  Notifications: undefined;
 };
 
 export type CitizenTabParamList = {
   Home: undefined;
-  Report: undefined;
+  Report: { initialMode?: 'text' | 'voice' | 'image' } | undefined;
   Nearby: undefined;
   Profile: undefined;
 };

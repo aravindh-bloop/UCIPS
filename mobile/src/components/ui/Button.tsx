@@ -86,7 +86,7 @@ export function Button({
   const shell: ViewStyle = {
     height: dims.height,
     paddingHorizontal: dims.paddingH,
-    borderRadius: radii.md,
+    borderRadius: radii.xl,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: fullWidth ? 'stretch' : 'flex-start',
@@ -109,9 +109,9 @@ export function Button({
       }}
     >
       {gradient ? (
-        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: radii.md }]} />
+        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: radii.xl }]} />
       ) : (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: solidBg[variant], borderRadius: radii.md }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: solidBg[variant], borderRadius: radii.xl }]} />
       )}
       {content}
     </AnimatedPressable>

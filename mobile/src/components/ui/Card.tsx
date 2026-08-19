@@ -57,10 +57,10 @@ export function Card({ children, onPress, style, padded = true, elevation = 'md'
 const styles = StyleSheet.create({
   card: {
     backgroundColor: palette.surface,
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: palette.border,
     overflow: 'hidden',
   },
-  padded: { padding: spacing.base },
+  padded: { padding: spacing.lg },
 });

@@ -12,3 +12,4 @@ export type { Segment } from './SegmentedControl';
 export { EmptyState } from './EmptyState';
 export { ToastProvider, useToast } from './Toast';
 export { StatCard, StatRow } from './StatCard';
+export { HeroBanner } from './HeroBanner';

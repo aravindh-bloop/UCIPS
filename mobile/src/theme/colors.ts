@@ -6,27 +6,57 @@
  */
 
 export const palette = {
-  bg: '#0C0F1A',
-  bgElevated: '#141829',
-  surface: '#1A1F35',
-  surfaceAlt: '#222842',
-  surfaceSunken: '#12162A',
+  bg: '#FAFAFC',
+  bgElevated: '#F3F4F6',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F9FAFB',
+  surfaceSunken: '#F3F4F6',
 
-  border: '#2A3050',
-  borderStrong: '#3A4268',
+  border: '#E5E7EB',
+  borderStrong: '#D1D5DB',
 
-  text: '#F1F5F9',
+  text: '#111827',
+  textMuted: '#6B7280',
+  textFaint: '#9CA3AF',
+  textInverse: '#FFFFFF',
+
+  primary: '#4F46E5', // Indigo
+  primaryDark: '#4338CA',
+  primaryLight: '#818CF8',
+  primarySoft: 'rgba(79,70,229,0.12)',
+
+  accent: '#7C3AED', // Purple
+
+  success: '#10B981',
+  successSoft: 'rgba(16,185,129,0.12)',
+  warning: '#F59E0B',
+  warningSoft: 'rgba(245,158,11,0.12)',
+  danger: '#EF4444',
+  dangerSoft: 'rgba(239,68,68,0.12)',
+  info: '#3B82F6',
+  infoSoft: 'rgba(59,130,246,0.12)',
+
+  white: '#FFFFFF',
+  black: '#000000',
+} as const;
+
+export const darkPalette = {
+  bg: '#0F172A',
+  bgElevated: '#1E293B',
+  surface: '#1E293B',
+  surfaceAlt: '#334155',
+  surfaceSunken: '#0F172A',
+  border: '#334155',
+  borderStrong: '#475569',
+  text: '#F8FAFC',
   textMuted: '#94A3B8',
   textFaint: '#64748B',
-  textInverse: '#0C0F1A',
-
-  primary: '#D4A843',
-  primaryDark: '#B8922A',
-  primaryLight: '#E8C76A',
-  primarySoft: 'rgba(212,168,67,0.12)',
-
-  accent: '#C084FC',
-
+  textInverse: '#0F172A',
+  primary: '#6366F1',
+  primaryDark: '#4F46E5',
+  primaryLight: '#818CF8',
+  primarySoft: 'rgba(99,102,241,0.12)',
+  accent: '#8B5CF6',
   success: '#34D399',
   successSoft: 'rgba(52,211,153,0.12)',
   warning: '#FBBF24',
@@ -35,19 +65,18 @@ export const palette = {
   dangerSoft: 'rgba(248,113,113,0.12)',
   info: '#38BDF8',
   infoSoft: 'rgba(56,189,248,0.12)',
-
   white: '#FFFFFF',
   black: '#000000',
 } as const;
 
 export const gradients = {
-  primary: ['#D4A843', '#B8922A'] as const,
-  primarySoft: ['#E8C76A', '#D4A843'] as const,
+  primary: ['#4F46E5', '#7C3AED'] as const,
+  primarySoft: ['#818CF8', '#A78BFA'] as const,
   success: ['#34D399', '#10B981'] as const,
   danger: ['#F87171', '#EF4444'] as const,
   sunrise: ['#FBBF24', '#F59E0B'] as const,
-  ocean: ['#38BDF8', '#6366F1'] as const,
-  brand: ['#D4A843', '#C084FC', '#818CF8'] as const,
+  ocean: ['#3B82F6', '#4F46E5'] as const,
+  brand: ['#3B82F6', '#4F46E5', '#7C3AED'] as const,
 };
 
 export interface CategoryStyle {

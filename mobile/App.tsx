@@ -18,6 +18,7 @@ import { ToastProvider } from './src/components/ui';
 import { AuthProvider } from './src/auth/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationTheme } from './src/navigation/navigationTheme';
+import { ThemeProvider } from './src/theme/ThemeContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -45,11 +46,13 @@ export default function App() {
           <BrandSplash />
         ) : (
           <ToastProvider>
-            <AuthProvider>
-              <NavigationContainer theme={navigationTheme}>
-                <RootNavigator />
-              </NavigationContainer>
-            </AuthProvider>
+            <ThemeProvider>
+              <AuthProvider>
+                <NavigationContainer theme={navigationTheme}>
+                  <RootNavigator />
+                </NavigationContainer>
+              </AuthProvider>
+            </ThemeProvider>
           </ToastProvider>
         )}
       </SafeAreaProvider>
