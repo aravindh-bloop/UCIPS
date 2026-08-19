@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, useToast } from '../../components/ui';
@@ -8,6 +8,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CitizenStackParamList } from '../../navigation/types';
 import { useAuth } from '../../auth/AuthContext';
 import { useAppTheme } from '../../theme/ThemeContext';
+import { useLanguage } from '../../i18n';
 
 type Props = NativeStackScreenProps<CitizenStackParamList, 'Menu'>;
 
@@ -30,14 +31,23 @@ export default function MenuScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const toast = useToast();
   const { theme, toggleTheme } = useAppTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   const handleLogout = async () => {
     try {
       await logout();
     } catch (e) {
-      toast.error('Could not log out');
+      toast.error(t('menu.errLogout'));
     }
   };
+
+  function openLanguagePicker() {
+    Alert.alert(t('language.title'), t('language.subtitle'), [
+      { text: t('language.english'), onPress: () => setLanguage('en') },
+      { text: t('language.tamil'), onPress: () => setLanguage('ta') },
+      { text: t('common.cancel'), style: 'cancel' },
+    ]);
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -52,31 +62,31 @@ export default function MenuScreen({ navigation }: Props) {
           <View style={styles.avatarLarge}>
             <Text variant="h1" style={{ color: palette.white }}>{user?.name?.[0] || 'U'}</Text>
           </View>
-          <Text variant="h2" style={{ marginTop: spacing.md }}>{user?.name || 'Citizen'}</Text>
+          <Text variant="h2" style={{ marginTop: spacing.md }}>{user?.name || t('home.citizen')}</Text>
           <Text variant="bodySm" muted>{user?.phone || '+91 00000 00000'}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text variant="overline" muted style={styles.sectionTitle}>Account</Text>
+          <Text variant="overline" muted style={styles.sectionTitle}>{t('menu.account')}</Text>
           <View style={styles.card}>
-            <MenuItem icon="person-outline" label="My Profile" onPress={() => { navigation.goBack(); /* navigation.navigate('ProfileTab') could be used if we had access */ toast.success('Go to Profile tab'); }} />
+            <MenuItem icon="person-outline" label={t('menu.myProfile')} onPress={() => { navigation.goBack(); toast.success(t('menu.goToProfile')); }} />
             <View style={styles.divider} />
-            <MenuItem icon="shield-checkmark-outline" label="Privacy & Security" onPress={() => toast.success('Privacy settings coming soon')} />
+            <MenuItem icon="shield-checkmark-outline" label={t('menu.privacySecurity')} onPress={() => toast.success(t('menu.privacySoon'))} />
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text variant="overline" muted style={styles.sectionTitle}>Preferences</Text>
+          <Text variant="overline" muted style={styles.sectionTitle}>{t('menu.preferences')}</Text>
           <View style={styles.card}>
-            <MenuItem icon={theme === 'dark' ? "moon-outline" : "sunny-outline"} label={`${theme === 'dark' ? 'Dark' : 'Light'} Mode`} onPress={toggleTheme} />
+            <MenuItem icon={theme === 'dark' ? "moon-outline" : "sunny-outline"} label={theme === 'dark' ? t('menu.darkMode') : t('menu.lightMode')} onPress={toggleTheme} />
             <View style={styles.divider} />
-            <MenuItem icon="language-outline" label="Language (English)" onPress={() => toast.success('Language options coming soon')} />
+            <MenuItem icon="language-outline" label={`${t('menu.language')} (${language === 'ta' ? t('language.tamil') : t('language.english')})`} onPress={openLanguagePicker} />
           </View>
         </View>
 
         <View style={styles.section}>
           <View style={styles.card}>
-            <MenuItem icon="log-out-outline" label="Log Out" onPress={handleLogout} danger />
+            <MenuItem icon="log-out-outline" label={t('menu.logOut')} onPress={handleLogout} danger />
           </View>
         </View>
       </ScrollView>

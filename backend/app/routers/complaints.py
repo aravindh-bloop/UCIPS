@@ -1,12 +1,12 @@
 import os
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from google.genai.errors import APIError
 from sqlalchemy.orm import Session
 
 from app.db.models import Complaint, Feedback, User
 from app.db.schemas import ComplaintCreate, ComplaintOut, FeedbackCreate, FeedbackOut, FollowUpAnswer
-from app.db.session import get_db
+from app.db.session import SessionLocal, get_db
 from app.security import get_current_user
 from app.services.clustering import recompute_all_clusters
 from app.services.embeddings import embed_text
@@ -30,32 +30,52 @@ def _unique_reference_code(db: Session) -> str:
 
 
 def _finalize_complaint(db: Session, complaint: Complaint) -> Complaint:
-    """Persist, compute a best-effort embedding, and re-trigger clustering.
-    Embedding failure must never block a complaint from being saved."""
+    """Persist the complaint. This is deliberately just the DB write -- embedding, clustering,
+    evidence, and project generation all involve extra Gemini calls and used to run inline
+    here, which on a slow/rate-limited request (each with up to 4 retries and 5-15s backoff)
+    could push total response time past the client's upload read-timeout with no way to
+    configure it higher. Those steps now run via _run_pipeline_tail after the response is
+    already sent, so submission always comes back fast; hotspots/evidence/projects catch up
+    moments later."""
     db.add(complaint)
     db.flush()
-
-    try:
-        complaint.embedding = embed_text(complaint.description or complaint.raw_text or "")
-    except Exception:
-        pass
-
     db.commit()
-    db.refresh(complaint)
-
-    touched_clusters = recompute_all_clusters(db)
-    for cluster in touched_clusters:
-        evidence = get_or_create_evidence(db, cluster)
-        generate_or_update_project(db, cluster, evidence)
-    db.commit()
-
     db.refresh(complaint)
     return complaint
+
+
+def _run_pipeline_tail(complaint_id: int) -> None:
+    """Runs after the HTTP response has already been sent (FastAPI BackgroundTasks), on its
+    own DB session since the request-scoped one is closed by then. Best-effort throughout --
+    a failure here must never surface to the citizen who already got their reference code."""
+    db = SessionLocal()
+    try:
+        complaint = db.get(Complaint, complaint_id)
+        if not complaint:
+            return
+
+        try:
+            complaint.embedding = embed_text(complaint.description or complaint.raw_text or "")
+            db.commit()
+        except Exception:
+            db.rollback()
+
+        try:
+            touched_clusters = recompute_all_clusters(db)
+            for cluster in touched_clusters:
+                evidence = get_or_create_evidence(db, cluster)
+                generate_or_update_project(db, cluster, evidence)
+            db.commit()
+        except Exception:
+            db.rollback()
+    finally:
+        db.close()
 
 
 @router.post("", response_model=ComplaintOut, status_code=201)
 def create_complaint(
     payload: ComplaintCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -78,6 +98,7 @@ def create_complaint(
         status="processed",
     )
     complaint = _finalize_complaint(db, complaint)
+    background_tasks.add_task(_run_pipeline_tail, complaint.id)
 
     out = ComplaintOut.model_validate(complaint)
     out.follow_up_question = extracted.get("follow_up_question") or None
@@ -88,6 +109,7 @@ def create_complaint(
 def answer_follow_up(
     complaint_id: int,
     payload: FollowUpAnswer,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -116,11 +138,13 @@ def answer_follow_up(
         complaint.raw_text = combined
 
     complaint = _finalize_complaint(db, complaint)
+    background_tasks.add_task(_run_pipeline_tail, complaint.id)
     return ComplaintOut.model_validate(complaint)
 
 
 @router.post("/voice", response_model=ComplaintOut, status_code=201)
 async def create_voice_complaint(
+    background_tasks: BackgroundTasks,
     lat: float = Form(...),
     lng: float = Form(...),
     language_code: str = Form("unknown"),
@@ -163,6 +187,7 @@ async def create_voice_complaint(
         status="processed",
     )
     complaint = _finalize_complaint(db, complaint)
+    background_tasks.add_task(_run_pipeline_tail, complaint.id)
 
     out = ComplaintOut.model_validate(complaint)
     out.follow_up_question = extracted.get("follow_up_question") or None
@@ -171,6 +196,7 @@ async def create_voice_complaint(
 
 @router.post("/image", response_model=ComplaintOut, status_code=201)
 async def create_image_complaint(
+    background_tasks: BackgroundTasks,
     lat: float = Form(...),
     lng: float = Form(...),
     caption: str | None = Form(None),
@@ -204,6 +230,7 @@ async def create_image_complaint(
         status="processed",
     )
     complaint = _finalize_complaint(db, complaint)
+    background_tasks.add_task(_run_pipeline_tail, complaint.id)
 
     return ComplaintOut.model_validate(complaint)
 

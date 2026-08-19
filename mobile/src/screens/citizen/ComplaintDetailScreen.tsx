@@ -14,6 +14,7 @@ import { Button, Card, Input, Screen, SeverityChip, Skeleton, StatusChip, Text, 
 import { haptics } from '../../lib/haptics';
 import { CitizenStackParamList, AuthorityStackParamList } from '../../navigation/types';
 import { categoryStyle, palette, radii, spacing, spring } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 type Props = NativeStackScreenProps<CitizenStackParamList | AuthorityStackParamList, 'ComplaintDetail'>;
 
@@ -21,6 +22,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
   const { complaintId } = route.params;
   const { token } = useAuth();
   const toast = useToast();
+  const { language, t } = useLanguage();
 
   const [complaint, setComplaint] = useState<ComplaintOut | null>(null);
   const [feedback, setFeedback] = useState<FeedbackOut | null>(null);
@@ -34,7 +36,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
     try {
       setComplaint(await complaintsApi.getOne(token, complaintId));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not load this report');
+      toast.error(err instanceof Error ? err.message : t('detail.loadError'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
     } catch {
       setFeedback(null); // 404 = no feedback yet, which is normal
     }
-  }, [token, complaintId, toast]);
+  }, [token, complaintId, toast, t]);
 
   useEffect(() => {
     void load();
@@ -54,10 +56,10 @@ export default function ComplaintDetailScreen({ route }: Props) {
     setSubmitting(true);
     try {
       setFeedback(await complaintsApi.submitFeedback(token, complaintId, rating, comment.trim() || undefined));
-      toast.success('Thanks for your feedback');
+      toast.success(t('detail.thanksFeedback'));
     } catch (err) {
       toast.error(
-        err instanceof ApiError && err.status === 409 ? 'You already reviewed this report' : 'Could not submit feedback',
+        err instanceof ApiError && err.status === 409 ? t('detail.alreadyReviewed') : t('detail.feedbackError'),
       );
     } finally {
       setSubmitting(false);
@@ -97,12 +99,12 @@ export default function ComplaintDetailScreen({ route }: Props) {
           <View style={styles.heroChips}>
             <View style={styles.heroChip}>
               <Text variant="caption" color={palette.white}>
-                {complaint.channel === 'voice' ? '🎤 Voice' : complaint.channel === 'image' ? '📷 Photo' : complaint.channel === 'phone' ? '☎️ Phone' : '📝 Text'}
+                {complaint.channel === 'voice' ? `🎤 ${t('common.voice')}` : complaint.channel === 'image' ? `📷 ${t('common.photo')}` : complaint.channel === 'phone' ? `☎️ ${t('common.phone')}` : `📝 ${t('common.text')}`}
               </Text>
             </View>
             <View style={styles.heroChip}>
               <Text variant="caption" color={palette.white}>
-                {created.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {created.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
               </Text>
             </View>
           </View>
@@ -117,7 +119,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
       <Animated.View entering={FadeInDown.delay(140).duration(420)}>
         <Card style={styles.card}>
           <Text variant="overline" muted>
-            AI Summary
+            {t('detail.aiSummary')}
           </Text>
           <Text variant="body" style={styles.summary}>
             {complaint.description ?? '—'}
@@ -140,7 +142,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
         <Animated.View entering={FadeInDown.delay(200).duration(420)}>
           <Card style={styles.card}>
             <Text variant="overline" muted>
-              What you said
+              {t('detail.whatYouSaid')}
             </Text>
             <Text variant="body" style={styles.transcript}>
               “{complaint.transcript}”
@@ -153,7 +155,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
         <Animated.View entering={FadeInDown.delay(220).duration(420)}>
           <Card style={styles.card}>
             <Text variant="overline" muted>
-              Your words
+              {t('detail.yourWords')}
             </Text>
             <Text variant="body" style={styles.summary}>
               {complaint.raw_text}
@@ -165,7 +167,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
       <Animated.View entering={FadeInDown.delay(240).duration(420)}>
         <Card style={styles.card}>
           <Text variant="overline" muted>
-            Location
+            {t('common.location')}
           </Text>
           <View style={styles.locationRow}>
             <Ionicons name="location" size={16} color={cat.color} />
@@ -180,7 +182,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
         {feedback ? (
           <Card style={styles.card} accent={palette.success}>
             <Text variant="overline" color={palette.success}>
-              Your feedback
+              {t('detail.yourFeedback')}
             </Text>
             <View style={styles.starsRow}>
               {[1, 2, 3, 4, 5].map((n) => (
@@ -201,7 +203,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
         ) : (
           <Card style={styles.card}>
             <Text variant="overline" muted>
-              Rate the resolution
+              {t('detail.rateResolution')}
             </Text>
             <View style={styles.starsRow}>
               {[1, 2, 3, 4, 5].map((n) => (
@@ -209,7 +211,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
               ))}
             </View>
             <Input
-              label="Comment (optional)"
+              label={t('detail.commentOptional')}
               value={comment}
               onChangeText={setComment}
               multiline
@@ -217,7 +219,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
               containerStyle={styles.commentInput}
             />
             <Button
-              title="Submit Feedback"
+              title={t('detail.submitFeedback')}
               onPress={submitFeedback}
               loading={submitting}
               disabled={!rating}

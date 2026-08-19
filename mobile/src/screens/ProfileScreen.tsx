@@ -4,10 +4,12 @@ import { Alert, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Button, Card, Screen, Text } from '../components/ui';
 import { useAuth } from '../auth/AuthContext';
+import { useLanguage } from '../i18n';
 import { gradients, palette, radii, spacing, stagger, TAB_BAR_HEIGHT } from '../theme';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const { language, t } = useLanguage();
 
   const initials = (user?.name ?? '?')
     .split(' ')
@@ -20,9 +22,9 @@ export default function ProfileScreen() {
   const isAuthority = user?.role === 'authority';
 
   function confirmLogout() {
-    Alert.alert('Log out', 'You will need to sign in again to continue.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: () => void logout() },
+    Alert.alert(t('profile.logOutConfirmTitle'), t('profile.logOutConfirmBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('profile.logOut'), style: 'destructive', onPress: () => void logout() },
     ]);
   }
 
@@ -30,7 +32,7 @@ export default function ProfileScreen() {
     <Screen scroll edges={{ top: true }} bottomInset={TAB_BAR_HEIGHT}>
       <Animated.View entering={FadeInDown.duration(400)}>
         <Text variant="h1" style={styles.title}>
-          Profile
+          {t('profile.title')}
         </Text>
       </Animated.View>
 
@@ -48,19 +50,19 @@ export default function ProfileScreen() {
             <View style={styles.roleBadge}>
               <Ionicons name={isAuthority ? 'shield-checkmark' : 'person'} size={12} color={palette.white} />
               <Text variant="caption" color={palette.white} style={styles.roleText}>
-                {isAuthority ? 'Authority' : 'Citizen'}
+                {isAuthority ? t('profile.authority') : t('profile.citizen')}
               </Text>
             </View>
           </LinearGradient>
 
           <View style={styles.details}>
-            <DetailRow icon="call-outline" label="Phone" value={user?.phone ?? '—'} />
-            <DetailRow icon="mail-outline" label="Email" value={user?.email ?? '—'} />
-            <DetailRow icon="language-outline" label="Language" value={(user?.preferred_language ?? 'en').toUpperCase()} />
+            <DetailRow icon="call-outline" label={t('profile.phone')} value={user?.phone ?? '—'} />
+            <DetailRow icon="mail-outline" label={t('profile.email')} value={user?.email ?? '—'} />
+            <DetailRow icon="language-outline" label={t('profile.language')} value={language === 'ta' ? t('language.tamil') : t('language.english')} />
             <DetailRow
               icon="calendar-outline"
-              label="Member since"
-              value={user ? new Date(user.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+              label={t('profile.memberSince')}
+              value={user ? new Date(user.created_at).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
               last
             />
           </View>
@@ -70,17 +72,16 @@ export default function ProfileScreen() {
       <Animated.View entering={FadeInDown.delay(stagger(2)).duration(420)} style={styles.aboutWrap}>
         <Card>
           <Text variant="overline" muted>
-            About
+            {t('profile.about')}
           </Text>
           <Text variant="bodySm" muted style={styles.about}>
-            UCIPS turns citizen reports into evidence-backed infrastructure projects, ranks them by impact, and
-            optimizes which set to fund within a budget.
+            {t('profile.aboutText')}
           </Text>
         </Card>
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(stagger(3)).duration(420)} style={styles.logoutWrap}>
-        <Button title="Log Out" onPress={confirmLogout} variant="danger" icon="→" />
+        <Button title={t('profile.logOut')} onPress={confirmLogout} variant="danger" icon="→" />
       </Animated.View>
     </Screen>
   );

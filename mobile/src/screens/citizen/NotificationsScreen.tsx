@@ -3,41 +3,24 @@ import { View, StyleSheet, FlatList, Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, Card } from '../../components/ui';
+import { useLanguage } from '../../i18n';
 import { palette, radii, spacing } from '../../theme';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CitizenStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<CitizenStackParamList, 'Notifications'>;
 
+/** Demo/placeholder notification feed -- there's no real notification backend yet, these are
+ * illustrative sample entries. */
 const MOCK_NOTIFICATIONS = [
-  {
-    id: '1',
-    title: 'Report Resolved',
-    message: 'Your report regarding the broken streetlight on Main St has been resolved.',
-    time: '2h ago',
-    icon: 'checkmark-circle',
-    color: palette.success,
-  },
-  {
-    id: '2',
-    title: 'New Hotspot Identified',
-    message: 'Multiple reports of flooding in Downtown area. Authorities have been alerted.',
-    time: '5h ago',
-    icon: 'warning',
-    color: palette.warning,
-  },
-  {
-    id: '3',
-    title: 'Project Approved',
-    message: 'The proposed road repair project in your neighborhood has been approved for budget.',
-    time: '1d ago',
-    icon: 'construct',
-    color: palette.primary,
-  },
-];
+  { id: '1', titleKey: 'notifications.mock1Title', messageKey: 'notifications.mock1Message', timeKey: 'notifications.time2h', icon: 'checkmark-circle', color: palette.success },
+  { id: '2', titleKey: 'notifications.mock2Title', messageKey: 'notifications.mock2Message', timeKey: 'notifications.time5h', icon: 'warning', color: palette.warning },
+  { id: '3', titleKey: 'notifications.mock3Title', messageKey: 'notifications.mock3Message', timeKey: 'notifications.time1d', icon: 'construct', color: palette.primary },
+] as const;
 
 export default function NotificationsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -45,7 +28,7 @@ export default function NotificationsScreen({ navigation }: Props) {
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={palette.text} />
         </Pressable>
-        <Text variant="h2">Notifications</Text>
+        <Text variant="h2">{t('notifications.title')}</Text>
       </View>
 
       <FlatList
@@ -60,10 +43,10 @@ export default function NotificationsScreen({ navigation }: Props) {
               </View>
               <View style={styles.textContainer}>
                 <View style={styles.cardHeader}>
-                  <Text variant="label">{item.title}</Text>
-                  <Text variant="caption" faint>{item.time}</Text>
+                  <Text variant="label">{t(item.titleKey)}</Text>
+                  <Text variant="caption" faint>{t(item.timeKey)}</Text>
                 </View>
-                <Text variant="bodySm" muted style={styles.message}>{item.message}</Text>
+                <Text variant="bodySm" muted style={styles.message}>{t(item.messageKey)}</Text>
               </View>
             </View>
           </Card>

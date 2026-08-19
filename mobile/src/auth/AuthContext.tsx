@@ -1,6 +1,6 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import * as authApi from '../api/auth';
-import { ApiError } from '../api/client';
+import { ApiError, setUnauthorizedHandler } from '../api/client';
 import { User } from '../api/types';
 import { clearToken, loadToken, saveToken } from './tokenStorage';
 
@@ -42,35 +42,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  async function login(identifier: string, password: string) {
+  const logout = useCallback(async () => {
+    await clearToken();
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  // Any authenticated request that comes back 401 means the stored token is dead (expired, or
+  // pointing at an account that no longer exists -- e.g. after the backend switched databases).
+  // Without this, the app stays "logged in" against a token the server rejects and every screen
+  // just errors in a loop with no way back to the login screen.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      void logout();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
+
+  const login = useCallback(async (identifier: string, password: string) => {
     const result = await authApi.login(identifier, password);
     await saveToken(result);
     setToken(result.access_token);
     setUser(result.user);
-  }
+  }, []);
 
-  async function registerStart(payload: authApi.RegisterStartPayload) {
-    return authApi.registerStart(payload);
-  }
+  const registerStart = useCallback(
+    (payload: authApi.RegisterStartPayload) => authApi.registerStart(payload),
+    [],
+  );
 
-  async function registerVerify(phone: string, otp: string) {
+  const registerVerify = useCallback(async (phone: string, otp: string) => {
     const result = await authApi.registerVerify(phone, otp);
     await saveToken(result);
     setToken(result.access_token);
     setUser(result.user);
-  }
+  }, []);
 
-  async function logout() {
-    await clearToken();
-    setToken(null);
-    setUser(null);
-  }
-
-  return (
-    <AuthContext.Provider value={{ user, token, loading, login, registerStart, registerVerify, logout }}>
-      {children}
-    </AuthContext.Provider>
+  // Memoized for the same reason as ToastProvider's value: screens depend on these in
+  // useCallback/useFocusEffect dependency arrays, so an unstable identity causes re-fetch loops.
+  const value = useMemo(
+    () => ({ user, token, loading, login, registerStart, registerVerify, logout }),
+    [user, token, loading, login, registerStart, registerVerify, logout],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {

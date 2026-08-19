@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui';
+import { useLanguage } from '../../i18n';
 import { haptics } from '../../lib/haptics';
 import { palette, radii, shadows, spacing, spring, TAB_BAR_HEIGHT } from '../../theme';
 
@@ -86,16 +87,18 @@ function TabItem({
 
 export default function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
+  const labels: Record<string, Parameters<typeof t>[0]> = {
+    Home: 'nav.home', Report: 'nav.report', Nearby: 'nav.nearby', Profile: 'nav.profile',
+    Hotspots: 'nav.hotspots', Reports: 'nav.reports', Projects: 'nav.projects', Budget: 'nav.budget',
+  };
 
   return (
     <View style={[styles.bar, shadows.lg, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const focused = state.index === index;
-        const label =
-          typeof options.tabBarLabel === 'string'
-            ? options.tabBarLabel
-            : options.title ?? route.name;
+        const label = labels[route.name] ? t(labels[route.name]) : options.title ?? route.name;
 
         return (
           <TabItem

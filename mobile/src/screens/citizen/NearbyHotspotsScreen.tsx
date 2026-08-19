@@ -19,17 +19,13 @@ import {
   type Segment,
 } from '../../components/ui';
 import { categoryStyle, palette, radii, shadows, spacing, stagger, TAB_BAR_HEIGHT } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 interface HotspotWithDistance extends ClusterOut {
   distanceKm: number | null;
 }
 
 type ViewMode = 'list' | 'map';
-
-const VIEW_MODES: Segment<ViewMode>[] = [
-  { value: 'list', label: 'List', icon: '📋' },
-  { value: 'map', label: 'Map', icon: '🗺️' },
-];
 
 /** Haversine distance in km -- accurate enough at city scale. */
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -44,6 +40,11 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): num
 
 export default function NearbyHotspotsScreen() {
   const toast = useToast();
+  const { t } = useLanguage();
+  const viewModes: Segment<ViewMode>[] = [
+    { value: 'list', label: t('common.list'), icon: '📋' },
+    { value: 'map', label: t('common.map'), icon: '🗺️' },
+  ];
   const insets = useSafeAreaInsets();
   const [hotspots, setHotspots] = useState<HotspotWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,13 +83,13 @@ export default function NearbyHotspotsScreen() {
 
         setHotspots(withDistance);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Could not load hotspots');
+        toast.error(err instanceof Error ? err.message : t('nearby.loadError'));
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [toast],
+    [toast, t],
   );
 
   useFocusEffect(
@@ -102,9 +103,9 @@ export default function NearbyHotspotsScreen() {
   const header = (
     <View>
       <Animated.View entering={FadeInDown.duration(420)} style={styles.header}>
-        <Text variant="h1">Nearby</Text>
+        <Text variant="h1">{t('nearby.title')}</Text>
         <Text variant="bodySm" muted style={styles.subtitle}>
-          What your neighbours have been reporting
+          {t('nearby.subtitle')}
         </Text>
       </Animated.View>
 
@@ -112,14 +113,14 @@ export default function NearbyHotspotsScreen() {
         <View style={styles.notice}>
           <Ionicons name="information-circle" size={15} color={palette.warning} />
           <Text variant="caption" color={palette.warning} style={styles.noticeText}>
-            Location off — showing all hotspots by demand instead of distance.
+            {t('common.locationOff')}
           </Text>
         </View>
       ) : null}
 
       <Animated.View entering={FadeInDown.delay(60).duration(420)}>
         <SegmentedControl
-          segments={VIEW_MODES}
+          segments={viewModes}
           value={viewMode}
           onChange={(v) => {
             setSelected(null);
@@ -139,7 +140,7 @@ export default function NearbyHotspotsScreen() {
         <View style={styles.list}>{header}</View>
         <View style={[styles.mapWrap, { marginBottom: TAB_BAR_HEIGHT + insets.bottom }]}>
           {hotspots.length === 0 ? (
-            <EmptyState icon="🗺️" title="No hotspots yet" message="Hotspots appear once several nearby reports point at the same problem." />
+            <EmptyState icon="🗺️" title={t('nearby.noHotspotsTitle')} message={t('nearby.noHotspotsMessage')} />
           ) : (
             <>
               <HotspotMap hotspots={hotspots} onSelectHotspot={(cluster) => setSelected(cluster as HotspotWithDistance)} />
@@ -168,7 +169,7 @@ export default function NearbyHotspotsScreen() {
         ListHeaderComponent={header}
         ListEmptyComponent={
           loading ? null : (
-            <EmptyState icon="🗺️" title="No hotspots yet" message="Hotspots appear once several nearby reports point at the same problem." />
+            <EmptyState icon="🗺️" title={t('nearby.noHotspotsTitle')} message={t('nearby.noHotspotsMessage')} />
           )
         }
         renderItem={({ item, index }) => {
@@ -184,7 +185,7 @@ export default function NearbyHotspotsScreen() {
                     <Text variant="label">{cat.label}</Text>
                     <Text variant="caption" faint>
                       {item.ward_name}
-                      {item.distanceKm !== null ? ` · ${item.distanceKm.toFixed(1)} km away` : ''}
+                      {item.distanceKm !== null ? ` · ${t('common.kmAway', { distance: item.distanceKm.toFixed(1) })}` : ''}
                     </Text>
                   </View>
                   <View style={[styles.countPill, { backgroundColor: cat.soft }]}>
@@ -192,13 +193,13 @@ export default function NearbyHotspotsScreen() {
                       {item.complaint_count}
                     </Text>
                     <Text variant="caption" color={cat.color}>
-                      reports
+                      {t('nearby.reports')}
                     </Text>
                   </View>
                 </View>
 
                 <ScoreBar
-                  label="Community demand"
+                  label={t('nearby.communityDemand')}
                   value={item.demand_score}
                   max={maxDemand}
                   color={cat.color}
@@ -216,6 +217,7 @@ export default function NearbyHotspotsScreen() {
 }
 
 function MapPreview({ hotspot, maxDemand, onDismiss }: { hotspot: HotspotWithDistance; maxDemand: number; onDismiss: () => void }) {
+  const { t } = useLanguage();
   const cat = categoryStyle(hotspot.category);
   return (
     <View>
@@ -228,13 +230,13 @@ function MapPreview({ hotspot, maxDemand, onDismiss }: { hotspot: HotspotWithDis
             {cat.label}
           </Text>
           <Text variant="caption" faint>
-            {hotspot.ward_name} · {hotspot.complaint_count} reports
-            {hotspot.distanceKm !== null ? ` · ${hotspot.distanceKm.toFixed(1)} km away` : ''}
+            {hotspot.ward_name} · {hotspot.complaint_count} {t('nearby.reports')}
+            {hotspot.distanceKm !== null ? ` · ${t('common.kmAway', { distance: hotspot.distanceKm.toFixed(1) })}` : ''}
           </Text>
         </View>
         <Ionicons name="close-circle" size={22} color={palette.textFaint} onPress={onDismiss} />
       </View>
-      <ScoreBar label="Community demand" value={hotspot.demand_score} max={maxDemand} color={cat.color} decimals={1} style={styles.previewBar} />
+      <ScoreBar label={t('nearby.communityDemand')} value={hotspot.demand_score} max={maxDemand} color={cat.color} decimals={1} style={styles.previewBar} />
     </View>
   );
 }

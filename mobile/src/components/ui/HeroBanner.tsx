@@ -4,12 +4,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Text } from './Text';
 import { palette, radii, spacing, gradients } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 interface HeroBannerProps {
   onPress: () => void;
 }
 
 export function HeroBanner({ onPress }: HeroBannerProps) {
+  const { t } = useLanguage();
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -20,13 +22,12 @@ export function HeroBanner({ onPress }: HeroBannerProps) {
       >
         <View style={styles.content}>
           <Text variant="h2" style={styles.title}>
-            Report, track and see{'\n'}
-            <Text variant="h2" style={styles.highlight}>real change</Text> in your area
+            {t('home.heroTitle')}
           </Text>
           
           <Pressable style={styles.button} onPress={onPress}>
             <Text variant="label" style={styles.buttonText}>
-              Report an issue
+              {t('home.heroAction')}
             </Text>
             <Ionicons name="chevron-forward" size={16} color={palette.primary} />
           </Pressable>

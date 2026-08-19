@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useCallback, useContext, useRef, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,11 +43,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     timer.current = setTimeout(() => setToast(null), 3600);
   }, []);
 
-  const value: ToastContextValue = {
-    success: useCallback((m: string) => show('success', m), [show]),
-    error: useCallback((m: string) => show('error', m), [show]),
-    info: useCallback((m: string) => show('info', m), [show]),
-  };
+  // Must be memoized: showing a toast re-renders this provider, and a fresh `value` object
+  // each time changes the identity every `useToast()` consumer sees. Screens put `toast` in
+  // useCallback/useFocusEffect dependency arrays, so an unstable identity turns
+  // "request fails -> show error toast" into an infinite re-fetch loop.
+  const value: ToastContextValue = useMemo(
+    () => ({
+      success: (m: string) => show('success', m),
+      error: (m: string) => show('error', m),
+      info: (m: string) => show('info', m),
+    }),
+    [show],
+  );
 
   const style = toast ? KIND_STYLE[toast.kind] : null;
 

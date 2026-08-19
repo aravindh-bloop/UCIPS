@@ -11,6 +11,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { AnimatedNumber, Button, Card, Input, Screen, Text, useToast } from '../../components/ui';
 import { haptics } from '../../lib/haptics';
 import { categoryStyle, gradients, palette, radii, shadows, spacing, stagger, TAB_BAR_HEIGHT } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 const PRESETS = [
   { label: '₹25 L', value: 2_500_000 },
@@ -28,6 +29,7 @@ function formatCurrency(value: number): string {
 export default function BudgetOptimizerScreen() {
   const { token } = useAuth();
   const toast = useToast();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [budget, setBudget] = useState('');
@@ -40,7 +42,7 @@ export default function BudgetOptimizerScreen() {
   async function optimize() {
     if (!token) return;
     if (!amount || amount <= 0) {
-      toast.error('Enter a budget amount first');
+      toast.error(t('budget.enterAmount'));
       return;
     }
     setLoading(true);
@@ -53,9 +55,9 @@ export default function BudgetOptimizerScreen() {
       toast.error(
         err instanceof ApiError
           ? err.status === 403
-            ? 'Only authority accounts can run the optimizer'
+            ? t('budget.authorityOnly')
             : err.message
-          : 'Could not run the optimizer',
+          : t('budget.error'),
       );
     } finally {
       setLoading(false);
@@ -67,10 +69,10 @@ export default function BudgetOptimizerScreen() {
     setApproving(true);
     try {
       setRun(await budgetApi.approve(token, run.id));
-      toast.success('Budget approved — projects moved to funded');
+      toast.success(t('budget.approveSuccess'));
     } catch (err) {
       toast.error(
-        err instanceof ApiError && err.status === 409 ? 'This run was already approved' : 'Could not approve this run',
+        err instanceof ApiError && err.status === 409 ? t('budget.alreadyApproved') : t('budget.approveError'),
       );
     } finally {
       setApproving(false);
@@ -82,15 +84,15 @@ export default function BudgetOptimizerScreen() {
   return (
     <Screen scroll edges={{ top: true }} bottomInset={TAB_BAR_HEIGHT + insets.bottom}>
       <Animated.View entering={FadeInDown.duration(420)} style={styles.header}>
-        <Text variant="h1">Budget Optimizer</Text>
+        <Text variant="h1">{t('budget.title')}</Text>
         <Text variant="bodySm" muted style={styles.subtitle}>
-          0/1 knapsack over ranked projects — maximum impact per rupee
+          {t('budget.subtitle')}
         </Text>
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(80).duration(420)}>
         <Input
-          label="Available budget (₹)"
+          label={t('budget.available')}
           icon="💰"
           value={budget}
           onChangeText={setBudget}
@@ -116,7 +118,7 @@ export default function BudgetOptimizerScreen() {
             );
           })}
         </View>
-        <Button title="Run Optimization" onPress={optimize} loading={loading} size="lg" icon="⚡" style={styles.runButton} />
+        <Button title={t('budget.run')} onPress={optimize} loading={loading} size="lg" icon="⚡" style={styles.runButton} />
       </Animated.View>
 
       {run ? (
@@ -131,7 +133,7 @@ export default function BudgetOptimizerScreen() {
               <View style={styles.summaryTop}>
                 <View>
                   <Text variant="overline" color="rgba(255,255,255,0.75)">
-                    Expected impact
+                    {t('budget.expectedImpact')}
                   </Text>
                   <AnimatedNumber value={run.total_expected_impact} decimals={2} variant="display" color={palette.white} />
                 </View>
@@ -142,33 +144,33 @@ export default function BudgetOptimizerScreen() {
                     color={palette.white}
                   />
                   <Text variant="caption" color={palette.white}>
-                    {run.status === 'approved' ? ' Approved' : ' Draft'}
+                    {run.status === 'approved' ? ` ${t('budget.approved')}` : ` ${t('budget.draft')}`}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.summaryFacts}>
-                <SummaryFact label="Allocated" value={formatCurrency(run.total_cost)} />
-                <SummaryFact label="Budget" value={formatCurrency(run.total_budget)} />
-                <SummaryFact label="Selected" value={`${run.selected.length} / ${run.selected.length + run.excluded.length}`} />
+                <SummaryFact label={t('budget.allocated')} value={formatCurrency(run.total_cost)} />
+                <SummaryFact label={t('budget.available')} value={formatCurrency(run.total_budget)} />
+                <SummaryFact label={t('budget.selected')} value={`${run.selected.length} / ${run.selected.length + run.excluded.length}`} />
               </View>
 
               <View style={styles.utilTrack}>
                 <View style={[styles.utilFill, { width: `${Math.min(100, utilization * 100)}%` }]} />
               </View>
               <Text variant="caption" color="rgba(255,255,255,0.8)">
-                {(utilization * 100).toFixed(1)}% of budget utilised
+                {t('budget.utilised', { percent: (utilization * 100).toFixed(1) })}
               </Text>
             </LinearGradient>
           </Animated.View>
 
           {run.status !== 'approved' ? (
             <Animated.View entering={FadeInDown.delay(120).duration(420)}>
-              <Button title="Approve This Allocation" onPress={approve} loading={approving} variant="success" icon="✓" style={styles.approve} />
+              <Button title={t('budget.approve')} onPress={approve} loading={approving} variant="success" icon="✓" style={styles.approve} />
             </Animated.View>
           ) : null}
 
-          <Section title="Funded" count={run.selected.length} color={palette.success} />
+          <Section title={t('budget.funded')} count={run.selected.length} color={palette.success} />
           {run.selected.map((project, index) => (
             <Animated.View key={project.id} entering={FadeInDown.delay(stagger(index)).duration(400)}>
               <ProjectRow project={project} included />
@@ -177,7 +179,7 @@ export default function BudgetOptimizerScreen() {
 
           {run.excluded.length > 0 ? (
             <>
-              <Section title="Not funded" count={run.excluded.length} color={palette.textMuted} />
+              <Section title={t('budget.notFunded')} count={run.excluded.length} color={palette.textMuted} />
               {run.excluded.map((project, index) => (
                 <Animated.View key={project.id} entering={FadeInDown.delay(stagger(index)).duration(400)}>
                   <ProjectRow project={project} included={false} />

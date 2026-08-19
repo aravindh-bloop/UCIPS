@@ -21,17 +21,19 @@ import {
   useToast,
   HeroBanner,
 } from '../../components/ui';
+import { useLanguage } from '../../i18n';
+import { TranslationKey } from '../../i18n/en';
 import { CitizenTabScreenProps } from '../../navigation/types';
 import { categoryStyle, palette, radii, spacing, stagger, TAB_BAR_HEIGHT } from '../../theme';
 import { useAppTheme } from '../../theme/ThemeContext';
 
 type Props = CitizenTabScreenProps<'Home'>;
 
-function greeting(): string {
+function greetingKey(): TranslationKey {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return 'home.greetingMorning';
+  if (h < 17) return 'home.greetingAfternoon';
+  return 'home.greetingEvening';
 }
 
 function QuickTile({ icon, label, color, iconColor, onPress, palette }: { icon: any, label: string, color: string, iconColor: string, onPress: () => void, palette: any }) {
@@ -47,6 +49,7 @@ export default function CitizenHomeScreen({ navigation }: Props) {
   const { theme, toggleTheme, palette } = useAppTheme();
   const { token, user } = useAuth();
   const toast = useToast();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [complaints, setComplaints] = useState<ComplaintOut[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +85,7 @@ export default function CitizenHomeScreen({ navigation }: Props) {
       try {
         setComplaints(await complaintsApi.listMine(token));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Could not load your reports');
+        toast.error(err instanceof Error ? err.message : t('home.errLoad'));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -138,13 +141,13 @@ export default function CitizenHomeScreen({ navigation }: Props) {
 
             <Animated.View entering={FadeInDown.duration(420)} style={styles.header}>
               <Text variant="body" muted style={{ fontSize: 18, marginBottom: spacing.xs }}>
-                {greeting()}
+                {t(greetingKey())}
               </Text>
               <View style={styles.headerContent}>
                 <View style={{ flex: 1 }}>
-                  <Text variant="h1" style={{ fontSize: 32, color: palette.text }}>{firstName || 'Citizen'} 👋</Text>
+                  <Text variant="h1" style={{ fontSize: 32, color: palette.text }}>{firstName || t('home.citizen')} 👋</Text>
                   <Text variant="bodySm" muted style={{ marginTop: spacing.xs, color: palette.textMuted }}>
-                    Your voice. Our priority. Better communities.
+                    {t('home.tagline')}
                   </Text>
                 </View>
                 <Pressable style={[styles.themeToggle, { backgroundColor: palette.surface, borderColor: palette.border }]} onPress={toggleTheme}>
@@ -160,31 +163,31 @@ export default function CitizenHomeScreen({ navigation }: Props) {
 
             <Animated.View entering={FadeInDown.delay(80).duration(420)}>
               <StatRow style={styles.stats}>
-                <StatCard label="Reports Submitted" value={stats.total} icon="document-text" color={palette.primary} />
-                <StatCard label="In hotspots Near you" value={stats.clustered} icon="flame" color={palette.warning} />
-                <StatCard label="Resolved Issues" value={stats.resolved} icon="checkmark-circle" color={palette.success} />
+                <StatCard label={t('home.statReports')} value={stats.total} icon="document-text" color={palette.primary} />
+                <StatCard label={t('home.statHotspots')} value={stats.clustered} icon="flame" color={palette.warning} />
+                <StatCard label={t('home.statResolved')} value={stats.resolved} icon="checkmark-circle" color={palette.success} />
               </StatRow>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(110).duration(420)}>
               <View style={styles.quickReportHeader}>
-                <Text variant="h3">Quick report</Text>
+                <Text variant="h3">{t('home.quickReport')}</Text>
                 <Pressable style={{ flexDirection: 'row', alignItems: 'center' }} onPress={() => navigation.navigate('Report')}>
-                  <Text variant="label" color={palette.primary}>View all </Text>
+                  <Text variant="label" color={palette.primary}>{t('home.viewAll')} </Text>
                   <Ionicons name="chevron-forward" size={12} color={palette.primary} />
                 </Pressable>
               </View>
               <View style={styles.quickGrid}>
-                <QuickTile icon="mic" label={'Voice\nReport'} color="#F3E8FF" iconColor="#A855F7" onPress={() => navigation.navigate('Report', { initialMode: 'voice' })} palette={palette} />
-                <QuickTile icon="camera" label={'Photo\nReport'} color="#E0F2FE" iconColor="#0EA5E9" onPress={() => navigation.navigate('Report', { initialMode: 'image' })} palette={palette} />
-                <QuickTile icon="create" label={'Write\nReport'} color="#DCFCE7" iconColor="#22C55E" onPress={() => navigation.navigate('Report', { initialMode: 'text' })} palette={palette} />
-                <QuickTile icon="location" label={'Select\nLocation'} color="#FEF3C7" iconColor="#F59E0B" onPress={() => navigation.navigate('Report', { initialMode: 'text' })} palette={palette} />
+                <QuickTile icon="mic" label={t('home.voiceReport')} color="#F3E8FF" iconColor="#A855F7" onPress={() => navigation.navigate('Report', { initialMode: 'voice' })} palette={palette} />
+                <QuickTile icon="camera" label={t('home.photoReport')} color="#E0F2FE" iconColor="#0EA5E9" onPress={() => navigation.navigate('Report', { initialMode: 'image' })} palette={palette} />
+                <QuickTile icon="create" label={t('home.writeReport')} color="#DCFCE7" iconColor="#22C55E" onPress={() => navigation.navigate('Report', { initialMode: 'text' })} palette={palette} />
+                <QuickTile icon="location" label={t('home.selectLocation')} color="#FEF3C7" iconColor="#F59E0B" onPress={() => navigation.navigate('Report', { initialMode: 'text' })} palette={palette} />
               </View>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(140).duration(420)}>
               <Text variant="h3" style={styles.sectionLabel}>
-                Recent activity
+                {t('home.recentActivity')}
               </Text>
             </Animated.View>
 
@@ -195,9 +198,9 @@ export default function CitizenHomeScreen({ navigation }: Props) {
           loading ? null : (
             <EmptyState
               icon="clipboard-outline"
-              title="No reports yet"
-              message="Spotted a pothole, broken streetlight or blocked drain? Report it and the AI will route it to the right project."
-              actionLabel="Let's get started"
+              title={t('home.emptyTitle')}
+              message={t('home.emptyMessage')}
+              actionLabel={t('home.emptyAction')}
               onAction={() => navigation.navigate('Report')}
             />
           )
@@ -216,9 +219,11 @@ export default function CitizenHomeScreen({ navigation }: Props) {
 }
 
 function ComplaintRow({ complaint, onPress }: { complaint: ComplaintOut; onPress: () => void }) {
+  const { language, t } = useLanguage();
   const cat = categoryStyle(complaint.category);
+  const catLabel = complaint.category ? t(`category.${complaint.category}` as TranslationKey) : cat.label;
   const created = new Date(complaint.created_at);
-  const when = created.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  const when = created.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short' });
 
   return (
     <Card onPress={onPress} accent={cat.color} style={styles.row}>
@@ -228,7 +233,7 @@ function ComplaintRow({ complaint, onPress }: { complaint: ComplaintOut; onPress
         </View>
         <View style={styles.rowHeadings}>
           <Text variant="label" numberOfLines={1}>
-            {cat.label}
+            {catLabel}
           </Text>
           <Text variant="caption" faint>
             {complaint.reference_code} · {when}
@@ -238,7 +243,7 @@ function ComplaintRow({ complaint, onPress }: { complaint: ComplaintOut; onPress
       </View>
 
       <Text variant="bodySm" muted numberOfLines={2} style={styles.rowDescription}>
-        {complaint.description ?? complaint.raw_text ?? complaint.transcript ?? 'Processing…'}
+        {complaint.description ?? complaint.raw_text ?? complaint.transcript ?? t('home.processing')}
       </Text>
 
       <View style={styles.rowChips}>
@@ -246,7 +251,7 @@ function ComplaintRow({ complaint, onPress }: { complaint: ComplaintOut; onPress
         <CategoryChip category={complaint.category} size="sm" />
         {complaint.channel !== 'text' ? (
           <Text variant="caption" faint style={styles.channel}>
-            {complaint.channel === 'voice' ? '🎤 Voice' : complaint.channel === 'image' ? '📷 Photo' : '☎️ Phone'}
+            {complaint.channel === 'voice' ? t('home.channelVoice') : complaint.channel === 'image' ? t('home.channelPhoto') : t('home.channelPhone')}
           </Text>
         ) : null}
       </View>

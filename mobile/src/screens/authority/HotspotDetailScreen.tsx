@@ -7,12 +7,14 @@ import { ComplaintOut } from '../../api/types';
 import { Card, CategoryChip, EmptyState, SeverityChip, SkeletonList, Text, useToast } from '../../components/ui';
 import { AuthorityStackParamList } from '../../navigation/types';
 import { palette, spacing, stagger } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 type Props = NativeStackScreenProps<AuthorityStackParamList, 'HotspotDetail'>;
 
 export default function HotspotDetailScreen({ route }: Props) {
   const { clusterId } = route.params;
   const toast = useToast();
+  const { language, t } = useLanguage();
   const [complaints, setComplaints] = useState<ComplaintOut[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,18 +22,18 @@ export default function HotspotDetailScreen({ route }: Props) {
     try {
       setComplaints(await hotspotsApi.complaintsFor(clusterId));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not load complaints');
+      toast.error(err instanceof Error ? err.message : t('hotspotDetail.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [clusterId, toast]);
+  }, [clusterId, toast, t]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const channelLabel = (channel: string) =>
-    channel === 'voice' ? '🎤 Voice' : channel === 'image' ? '📷 Photo' : channel === 'phone' ? '☎️ Phone' : '📝 Text';
+    channel === 'voice' ? `🎤 ${t('common.voice')}` : channel === 'image' ? `📷 ${t('common.photo')}` : channel === 'phone' ? `☎️ ${t('common.phone')}` : `📝 ${t('common.text')}`;
 
   return (
     <View style={styles.container}>
@@ -44,7 +46,7 @@ export default function HotspotDetailScreen({ route }: Props) {
           <View>
             <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
               <Text variant="overline" muted>
-                Underlying evidence
+                {t('hotspotDetail.evidence')}
               </Text>
               <Text variant="h2" style={styles.count}>
                 {loading ? '—' : `${complaints.length} citizen report${complaints.length === 1 ? '' : 's'}`}
@@ -53,7 +55,7 @@ export default function HotspotDetailScreen({ route }: Props) {
             {loading ? <SkeletonList count={4} /> : null}
           </View>
         }
-        ListEmptyComponent={loading ? null : <EmptyState icon="📭" title="No complaints" message="This hotspot has no attached reports." />}
+        ListEmptyComponent={loading ? null : <EmptyState icon="📭" title={t('hotspotDetail.noComplaints')} message={t('hotspotDetail.noComplaintsMessage')} />}
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(stagger(index)).duration(400)}>
             <Card style={styles.card}>
@@ -70,7 +72,7 @@ export default function HotspotDetailScreen({ route }: Props) {
                 <SeverityChip severity={item.severity} size="sm" />
                 <CategoryChip category={item.category} size="sm" />
                 <Text variant="caption" faint style={styles.date}>
-                  {new Date(item.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  {new Date(item.created_at).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short' })}
                 </Text>
               </View>
             </Card>

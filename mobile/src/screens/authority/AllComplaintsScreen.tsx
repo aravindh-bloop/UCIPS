@@ -19,12 +19,14 @@ import {
 } from '../../components/ui';
 import { AuthorityTabScreenProps } from '../../navigation/types';
 import { categoryStyle, palette, spacing, stagger, TAB_BAR_HEIGHT } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 type Props = AuthorityTabScreenProps<'Reports'>;
 
 export default function AllComplaintsScreen({ navigation }: Props) {
   const { token } = useAuth();
   const toast = useToast();
+  const { language, t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [complaints, setComplaints] = useState<ComplaintOut[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,13 +39,13 @@ export default function AllComplaintsScreen({ navigation }: Props) {
       try {
         setComplaints(await complaintsApi.listAll(token));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Could not load reports');
+        toast.error(err instanceof Error ? err.message : t('reports.loadError'));
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [token, toast],
+    [token, toast, t],
   );
 
   useFocusEffect(
@@ -59,7 +61,7 @@ export default function AllComplaintsScreen({ navigation }: Props) {
   }, [complaints]);
 
   const channelLabel = (channel: string) =>
-    channel === 'voice' ? '🎤 Voice' : channel === 'image' ? '📷 Photo' : channel === 'phone' ? '☎️ Phone' : '📝 Text';
+    channel === 'voice' ? `🎤 ${t('common.voice')}` : channel === 'image' ? `📷 ${t('common.photo')}` : channel === 'phone' ? `☎️ ${t('common.phone')}` : `📝 ${t('common.text')}`;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -74,17 +76,17 @@ export default function AllComplaintsScreen({ navigation }: Props) {
         ListHeaderComponent={
           <View>
             <Animated.View entering={FadeInDown.duration(420)} style={styles.header}>
-              <Text variant="h1">All Reports</Text>
+              <Text variant="h1">{t('reports.title')}</Text>
               <Text variant="bodySm" muted style={styles.subtitle}>
-                Every citizen report, clustered or not
+                {t('reports.subtitle')}
               </Text>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(80).duration(420)}>
               <StatRow style={styles.stats}>
-                <StatCard label="Total" value={stats.total} icon="📝" />
-                <StatCard label="In hotspots" value={stats.clustered} icon="🔥" color={palette.accent} />
-                <StatCard label="Processed" value={stats.processed} icon="⚙️" color={palette.info} />
+                <StatCard label={t('reports.total')} value={stats.total} icon="📝" />
+                <StatCard label={t('reports.inHotspots')} value={stats.clustered} icon="🔥" color={palette.accent} />
+                <StatCard label={t('reports.processed')} value={stats.processed} icon="⚙️" color={palette.info} />
               </StatRow>
             </Animated.View>
 
@@ -92,12 +94,12 @@ export default function AllComplaintsScreen({ navigation }: Props) {
           </View>
         }
         ListEmptyComponent={
-          loading ? null : <EmptyState icon="📭" title="No reports yet" message="Citizen reports will appear here as they are submitted." />
+          loading ? null : <EmptyState icon="📭" title={t('reports.emptyTitle')} message={t('reports.emptyMessage')} />
         }
         renderItem={({ item, index }) => {
           const cat = categoryStyle(item.category);
           const created = new Date(item.created_at);
-          const when = created.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+          const when = created.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short' });
 
           return (
             <Animated.View entering={FadeInDown.delay(stagger(index)).duration(420)}>

@@ -1,4 +1,6 @@
 import { StyleSheet, View, ViewStyle } from 'react-native';
+import { useLanguage } from '../../i18n';
+import { TranslationKey } from '../../i18n/en';
 import { categoryStyle, radii, severityStyle, spacing, statusStyle } from '../../theme';
 import { Text } from './Text';
 
@@ -34,18 +36,26 @@ export function Chip({ label, color, soft, icon, size = 'md', style }: ChipProps
 }
 
 export function CategoryChip({ category, size, style }: { category: string | null | undefined; size?: 'sm' | 'md'; style?: ViewStyle }) {
+  const { t } = useLanguage();
   const s = categoryStyle(category);
-  return <Chip label={s.label} color={s.color} soft={s.soft} icon={s.icon} size={size} style={style} />;
+  const key = category && (`category.${category}` as TranslationKey);
+  const label = key ? t(key) : s.label;
+  return <Chip label={label} color={s.color} soft={s.soft} icon={s.icon} size={size} style={style} />;
 }
 
 export function SeverityChip({ severity, size, style }: { severity: number | null | undefined; size?: 'sm' | 'md'; style?: ViewStyle }) {
+  const { t } = useLanguage();
   const s = severityStyle(severity);
-  return <Chip label={severity ? `${s.label} · ${severity}/5` : s.label} color={s.color} soft={s.soft} size={size} style={style} />;
+  const label = severity ? t(`severity.${severity}` as TranslationKey) : t('severity.unknown');
+  return <Chip label={severity ? `${label} · ${severity}/5` : label} color={s.color} soft={s.soft} size={size} style={style} />;
 }
 
 export function StatusChip({ status, size, style }: { status: string | null | undefined; size?: 'sm' | 'md'; style?: ViewStyle }) {
+  const { t } = useLanguage();
   const s = statusStyle(status);
-  return <Chip label={s.label} color={s.color} soft={s.soft} size={size} style={style} />;
+  const key = status && (`status.${status}` as TranslationKey);
+  const label = key ? t(key) : s.label;
+  return <Chip label={label} color={s.color} soft={s.soft} size={size} style={style} />;
 }
 
 const styles = StyleSheet.create({

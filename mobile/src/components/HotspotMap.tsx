@@ -4,6 +4,7 @@ import Animated, { FadeOut } from 'react-native-reanimated';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { ClusterOut } from '../api/types';
 import { categoryStyle, palette, radii, spacing } from '../theme';
+import { useLanguage } from '../i18n';
 import { Text } from './ui';
 
 interface HotspotMapProps {
@@ -22,6 +23,8 @@ interface MapPoint {
   ward: string;
   count: number;
   demand: number;
+  reportsLabel: string;
+  demandLabel: string;
 }
 
 /**
@@ -179,8 +182,8 @@ function buildHtml(points: MapPoint[]): string {
           marker.bindPopup(
             '<div class="hs-pop-title">' + p.icon + '&nbsp; ' + p.label + '</div>' +
             '<div class="hs-pop-sub">' + p.ward + '</div>' +
-            '<div class="hs-pop-sub">' + p.count + ' report' + (p.count === 1 ? '' : 's') +
-              ' &middot; demand <span class="hs-pop-demand">' + p.demand.toFixed(1) + '</span></div>'
+            '<div class="hs-pop-sub">' + p.count + ' ' + p.reportsLabel +
+              ' &middot; ' + p.demandLabel + ' <span class="hs-pop-demand">' + p.demand.toFixed(1) + '</span></div>'
           );
           marker.on('click', function () { post({ type: 'select', id: p.id }); });
           markers.push(marker);
@@ -208,6 +211,7 @@ function buildHtml(points: MapPoint[]): string {
 }
 
 export function HotspotMap({ hotspots, onSelectHotspot, height }: HotspotMapProps) {
+  const { t } = useLanguage();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   // Kept in a ref so the marker-tap handler always resolves against current data
@@ -229,9 +233,11 @@ export function HotspotMap({ hotspots, onSelectHotspot, height }: HotspotMapProp
           ward: h.ward_name,
           count: h.complaint_count,
           demand: h.demand_score,
+          reportsLabel: t('common.reports'),
+          demandLabel: t('hotspots.demandScore'),
         };
       }),
-    [hotspots],
+    [hotspots, t],
   );
 
   const html = useMemo(() => buildHtml(points), [points]);
@@ -273,17 +279,17 @@ export function HotspotMap({ hotspots, onSelectHotspot, height }: HotspotMapProp
             <>
               <ActivityIndicator color={palette.primary} />
               <Text variant="caption" color={MAP_TEXT_MUTED} style={styles.overlayText}>
-                Loading map…
+                {t('map.loading')}
               </Text>
             </>
           ) : (
             <>
               <Text style={styles.overlayIcon}>🌐</Text>
               <Text variant="bodySm" color={MAP_TEXT_MUTED} style={styles.overlayText}>
-                Map needs an internet connection
+                {t('map.offline')}
               </Text>
               <Text variant="caption" color={MAP_TEXT_FAINT} style={styles.overlayText}>
-                Switch to List view to see hotspots
+                {t('map.switchList')}
               </Text>
             </>
           )}

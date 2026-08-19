@@ -9,6 +9,7 @@ import { ProjectOut } from '../../api/types';
 import { Card, EmptyState, ScoreBar, SkeletonList, StatCard, StatRow, StatusChip, Text, useToast } from '../../components/ui';
 import { haptics } from '../../lib/haptics';
 import { categoryStyle, palette, radii, spacing, stagger, TAB_BAR_HEIGHT } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 const RANK_COLORS = ['#D4A843', '#94A3B8', '#B45309'];
 
@@ -20,6 +21,7 @@ function formatCurrency(value: number): string {
 
 export default function ProjectsScreen() {
   const toast = useToast();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [projects, setProjects] = useState<ProjectOut[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,13 +34,13 @@ export default function ProjectsScreen() {
       try {
         setProjects(await projectsApi.list('priority'));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Could not load projects');
+        toast.error(err instanceof Error ? err.message : t('projects.loadError'));
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [toast],
+    [toast, t],
   );
 
   useFocusEffect(
@@ -66,24 +68,24 @@ export default function ProjectsScreen() {
         ListHeaderComponent={
           <View>
             <Animated.View entering={FadeInDown.duration(420)} style={styles.header}>
-              <Text variant="h1">Ranked Projects</Text>
+              <Text variant="h1">{t('projects.title')}</Text>
               <Text variant="bodySm" muted style={styles.subtitle}>
-                AI-generated interventions, scored and explained
+                {t('projects.subtitle')}
               </Text>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(80).duration(420)}>
               <StatRow style={styles.stats}>
-                <StatCard label="Projects" value={stats.count} icon="🏗️" />
-                <StatCard label="Total ask" value={stats.cost / 10_000_000} decimals={2} prefix="₹" suffix=" Cr" icon="💰" color={palette.warning} />
-                <StatCard label="People" value={stats.beneficiaries} grouped icon="👥" color={palette.success} />
+                <StatCard label={t('nav.projects')} value={stats.count} icon="🏗️" />
+                <StatCard label={t('projects.totalAsk')} value={stats.cost / 10_000_000} decimals={2} prefix="₹" suffix=" Cr" icon="💰" color={palette.warning} />
+                <StatCard label={t('projects.people')} value={stats.beneficiaries} grouped icon="👥" color={palette.success} />
               </StatRow>
             </Animated.View>
 
             {loading ? <SkeletonList count={4} /> : null}
           </View>
         }
-        ListEmptyComponent={loading ? null : <EmptyState icon="🏗️" title="No projects yet" message="Projects are generated once hotspots form and pass evidence validation." />}
+        ListEmptyComponent={loading ? null : <EmptyState icon="🏗️" title={t('projects.emptyTitle')} message={t('projects.emptyMessage')} />}
         renderItem={({ item, index }) => {
           const cat = categoryStyle(item.category);
           const isOpen = expanded === item.id;
@@ -114,23 +116,23 @@ export default function ProjectsScreen() {
                 <View style={styles.priorityBox}>
                   <View>
                     <Text variant="overline" muted>
-                      Priority
+                      {t('projects.priority')}
                     </Text>
                     <Text variant="h1" color={cat.color}>
                       {item.priority_score.toFixed(2)}
                     </Text>
                   </View>
                   <View style={styles.priorityFacts}>
-                    <Fact icon="cash-outline" label="Cost" value={formatCurrency(item.estimated_cost)} />
-                    <Fact icon="people-outline" label="Beneficiaries" value={item.estimated_beneficiaries.toLocaleString('en-IN')} />
+                    <Fact icon="cash-outline" label={t('projects.cost')} value={formatCurrency(item.estimated_cost)} />
+                    <Fact icon="people-outline" label={t('projects.beneficiaries')} value={item.estimated_beneficiaries.toLocaleString('en-IN')} />
                   </View>
                 </View>
 
                 <View style={styles.scores}>
-                  <ScoreBar label="Demand" value={item.demand_score} color={palette.primary} delay={stagger(index) + 120} style={styles.score} />
-                  <ScoreBar label="Impact" value={item.impact_score} color={palette.success} delay={stagger(index) + 170} style={styles.score} />
-                  <ScoreBar label="Urgency" value={item.urgency_score} color={palette.warning} delay={stagger(index) + 220} style={styles.score} />
-                  <ScoreBar label="Feasibility" value={item.feasibility_score} color={palette.info} delay={stagger(index) + 270} style={styles.score} />
+                  <ScoreBar label={t('projects.demand')} value={item.demand_score} color={palette.primary} delay={stagger(index) + 120} style={styles.score} />
+                  <ScoreBar label={t('projects.impact')} value={item.impact_score} color={palette.success} delay={stagger(index) + 170} style={styles.score} />
+                  <ScoreBar label={t('projects.urgency')} value={item.urgency_score} color={palette.warning} delay={stagger(index) + 220} style={styles.score} />
+                  <ScoreBar label={t('projects.feasibility')} value={item.feasibility_score} color={palette.info} delay={stagger(index) + 270} style={styles.score} />
                 </View>
 
                 <Text variant="bodySm" muted numberOfLines={isOpen ? undefined : 2} style={styles.description}>
@@ -148,7 +150,7 @@ export default function ProjectsScreen() {
                     >
                       <Ionicons name="sparkles" size={13} color={palette.accent} />
                       <Text variant="caption" color={palette.accent} style={styles.explainLabel}>
-                        {isOpen ? 'Hide AI reasoning' : 'Why this ranking?'}
+                        {isOpen ? t('projects.hideReasoning') : t('projects.whyRanking')}
                       </Text>
                       <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={14} color={palette.accent} />
                     </Pressable>

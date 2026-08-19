@@ -22,17 +22,18 @@ import {
 } from '../../components/ui';
 import { AuthorityTabScreenProps } from '../../navigation/types';
 import { categoryStyle, palette, radii, shadows, spacing, stagger, TAB_BAR_HEIGHT } from '../../theme';
+import { useLanguage } from '../../i18n';
 
 type Props = AuthorityTabScreenProps<'Hotspots'>;
 type ViewMode = 'list' | 'map';
 
-const VIEW_MODES: Segment<ViewMode>[] = [
-  { value: 'list', label: 'List', icon: '📋' },
-  { value: 'map', label: 'Map', icon: '🗺️' },
-];
-
 export default function HotspotsScreen({ navigation }: Props) {
   const toast = useToast();
+  const { t } = useLanguage();
+  const viewModes: Segment<ViewMode>[] = [
+    { value: 'list', label: t('common.list'), icon: '📋' },
+    { value: 'map', label: t('common.map'), icon: '🗺️' },
+  ];
   const insets = useSafeAreaInsets();
   const [hotspots, setHotspots] = useState<ClusterOut[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,13 +47,13 @@ export default function HotspotsScreen({ navigation }: Props) {
       try {
         setHotspots(await hotspotsApi.list());
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Could not load hotspots');
+        toast.error(err instanceof Error ? err.message : t('hotspots.loadError'));
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [toast],
+    [toast, t],
   );
 
   useFocusEffect(
@@ -72,23 +73,23 @@ export default function HotspotsScreen({ navigation }: Props) {
   const header = (
     <View>
       <Animated.View entering={FadeInDown.duration(420)} style={styles.header}>
-        <Text variant="h1">Demand Hotspots</Text>
+        <Text variant="h1">{t('hotspots.title')}</Text>
         <Text variant="bodySm" muted style={styles.subtitle}>
-          Clustered citizen reports, ranked by demand
+          {t('hotspots.subtitle')}
         </Text>
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(80).duration(420)}>
         <StatRow style={styles.stats}>
-          <StatCard label="Hotspots" value={stats.hotspots} icon="🔥" />
-          <StatCard label="Reports" value={stats.complaints} icon="📝" color={palette.info} />
-          <StatCard label="Top demand" value={stats.topDemand} decimals={1} icon="📈" color={palette.accent} />
+          <StatCard label={t('hotspots.statHotspots')} value={stats.hotspots} icon="🔥" />
+          <StatCard label={t('hotspots.statReports')} value={stats.complaints} icon="📝" color={palette.info} />
+          <StatCard label={t('hotspots.statTopDemand')} value={stats.topDemand} decimals={1} icon="📈" color={palette.accent} />
         </StatRow>
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(120).duration(420)}>
         <SegmentedControl
-          segments={VIEW_MODES}
+          segments={viewModes}
           value={viewMode}
           onChange={(v) => {
             setSelected(null);
@@ -117,7 +118,7 @@ export default function HotspotsScreen({ navigation }: Props) {
         <View style={styles.list}>{header}</View>
         <View style={[styles.mapWrap, { marginBottom: TAB_BAR_HEIGHT + insets.bottom }]}>
           {hotspots.length === 0 ? (
-            <EmptyState icon="🗺️" title="No hotspots yet" message="Hotspots form once enough nearby reports share a category." />
+            <EmptyState icon="🗺️" title={t('nearby.noHotspotsTitle')} message={t('hotspots.noHotspotsMessage')} />
           ) : (
             <>
               <HotspotMap hotspots={hotspots} onSelectHotspot={setSelected} />
@@ -149,7 +150,7 @@ export default function HotspotsScreen({ navigation }: Props) {
           <RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={palette.primary} colors={[palette.primary]} />
         }
         ListHeaderComponent={header}
-        ListEmptyComponent={<EmptyState icon="🗺️" title="No hotspots yet" message="Hotspots form once enough nearby reports share a category." />}
+        ListEmptyComponent={<EmptyState icon="🗺️" title={t('nearby.noHotspotsTitle')} message={t('hotspots.noHotspotsMessage')} />}
         renderItem={({ item, index }) => {
           const cat = categoryStyle(item.category);
           return (
@@ -173,7 +174,7 @@ export default function HotspotsScreen({ navigation }: Props) {
                 </View>
 
                 <ScoreBar
-                  label="Demand score"
+                  label={t('hotspots.demandScore')}
                   value={item.demand_score}
                   max={maxDemand}
                   color={cat.color}
@@ -208,6 +209,7 @@ function SelectedHotspotPreview({
   onViewDetails: () => void;
   onDismiss: () => void;
 }) {
+  const { t } = useLanguage();
   const cat = categoryStyle(hotspot.category);
   return (
     <View style={styles.preview}>
@@ -225,8 +227,8 @@ function SelectedHotspotPreview({
         </View>
         <Ionicons name="close-circle" size={22} color={palette.textFaint} onPress={onDismiss} />
       </View>
-      <ScoreBar label="Demand score" value={hotspot.demand_score} max={maxDemand} color={cat.color} decimals={1} style={styles.previewBar} />
-      <Button title="View Complaints" onPress={onViewDetails} size="sm" />
+      <ScoreBar label={t('hotspots.demandScore')} value={hotspot.demand_score} max={maxDemand} color={cat.color} decimals={1} style={styles.previewBar} />
+      <Button title={t('common.viewComplaints')} onPress={onViewDetails} size="sm" />
     </View>
   );
 }

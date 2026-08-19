@@ -33,18 +33,13 @@ import {
   useToast,
   type Segment,
 } from '../../components/ui';
+import { useLanguage } from '../../i18n';
 import { haptics } from '../../lib/haptics';
 import { CitizenTabScreenProps, CitizenTabParamList } from '../../navigation/types';
 import { palette, radii, shadows, spacing, TAB_BAR_HEIGHT } from '../../theme';
 
 type Props = CitizenTabScreenProps<'Report'>;
 type Mode = 'text' | 'voice' | 'image';
-
-const MODES: Segment<Mode>[] = [
-  { value: 'text', label: 'Text', icon: '📝' },
-  { value: 'voice', label: 'Voice', icon: '🎤' },
-  { value: 'image', label: 'Photo', icon: '📷' },
-];
 
 export default function NewComplaintScreen({ navigation }: Props) {
   const route = useRoute<RouteProp<CitizenTabParamList, 'Report'>>();
@@ -53,6 +48,13 @@ export default function NewComplaintScreen({ navigation }: Props) {
   const { token } = useAuth();
   const toast = useToast();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
+
+  const MODES: Segment<Mode>[] = [
+    { value: 'text', label: t('newComplaint.modeText'), icon: '📝' },
+    { value: 'voice', label: t('newComplaint.modeVoice'), icon: '🎤' },
+    { value: 'image', label: t('newComplaint.modePhoto'), icon: '📷' },
+  ];
 
   const [mode, setMode] = useState<Mode>(initialMode as Mode);
 
@@ -73,7 +75,6 @@ export default function NewComplaintScreen({ navigation }: Props) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationName, setLocationName] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ComplaintOut | null>(null);
@@ -104,28 +105,18 @@ export default function NewComplaintScreen({ navigation }: Props) {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        toast.error('Location permission denied');
+        toast.error(t('newComplaint.errLocationPermission'));
         return;
       }
       const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
       haptics.success();
-
-      const [geocode] = await Location.reverseGeocodeAsync({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-
-      if (geocode) {
-        const area = geocode.city || geocode.subregion || geocode.region || geocode.name;
-        if (area) setLocationName(area);
-      }
     } catch {
-      toast.error('Could not get your location');
+      toast.error(t('newComplaint.errLocation'));
     } finally {
       setLocating(false);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     void captureLocation();
@@ -135,7 +126,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
     try {
       const permission = await AudioModule.requestRecordingPermissionsAsync();
       if (!permission.granted) {
-        toast.error('Microphone permission denied');
+        toast.error(t('newComplaint.errMicPermission'));
         return;
       }
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -147,7 +138,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
       setIsRecording(true);
       timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
     } catch {
-      toast.error('Could not start recording');
+      toast.error(t('newComplaint.errStartRecording'));
     }
   }
 
@@ -157,7 +148,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
       setRecordedUri(recorder.uri ?? null);
       haptics.success();
     } catch {
-      toast.error('Could not stop recording');
+      toast.error(t('newComplaint.errStopRecording'));
     } finally {
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
@@ -170,7 +161,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        toast.error('Permission denied');
+        toast.error(t('newComplaint.errPickerPermission'));
         return;
       }
       const picked = fromCamera
@@ -181,7 +172,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
         haptics.select();
       }
     } catch {
-      toast.error('Could not open the picker');
+      toast.error(t('newComplaint.errPicker'));
     }
   }
 
@@ -206,9 +197,9 @@ export default function NewComplaintScreen({ navigation }: Props) {
       setPendingQuestion(null);
       setJustRefined(true);
       haptics.success();
-      toast.success('Report refined with your answer');
+      toast.success(t('newComplaint.refinedToast'));
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Could not submit your answer');
+      toast.error(err instanceof ApiError ? err.message : t('newComplaint.errFollowUp'));
     } finally {
       setAnsweringFollowUp(false);
     }
@@ -217,12 +208,12 @@ export default function NewComplaintScreen({ navigation }: Props) {
   async function submit() {
     if (!token) return;
     if (!coords) {
-      toast.error('Add your location first');
+      toast.error(t('newComplaint.errNoLocation'));
       return;
     }
-    if (mode === 'text' && !text.trim()) return toast.error('Describe the problem first');
-    if (mode === 'voice' && !recordedUri) return toast.error('Record a voice note first');
-    if (mode === 'image' && !image) return toast.error('Take or choose a photo first');
+    if (mode === 'text' && !text.trim()) return toast.error(t('newComplaint.errNoText'));
+    if (mode === 'voice' && !recordedUri) return toast.error(t('newComplaint.errNoVoice'));
+    if (mode === 'image' && !image) return toast.error(t('newComplaint.errNoImage'));
 
     setSubmitting(true);
     try {
@@ -242,14 +233,14 @@ export default function NewComplaintScreen({ navigation }: Props) {
       }
       setResult(complaint);
       setPendingQuestion(complaint.follow_up_question ?? null);
-      toast.success(`Reported as ${complaint.reference_code}`);
+      toast.success(t('newComplaint.reportedAs', { code: complaint.reference_code }));
     } catch (err) {
       toast.error(
         err instanceof ApiError
           ? err.status === 502
-            ? 'The AI service is busy. Please try again in a moment.'
+            ? t('newComplaint.errAiBusy')
             : err.message
-          : 'Could not submit your report',
+          : t('newComplaint.errSubmit'),
       );
     } finally {
       setSubmitting(false);
@@ -265,17 +256,17 @@ export default function NewComplaintScreen({ navigation }: Props) {
             <Ionicons name="checkmark" size={38} color={palette.white} />
           </View>
           <Text variant="h1" center style={styles.successTitle}>
-            Report submitted
+            {t('newComplaint.successTitle')}
           </Text>
           <Text variant="body" muted center>
-            Reference {result.reference_code}
+            {t('newComplaint.reference', { code: result.reference_code })}
           </Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(120).duration(450)}>
           <Card style={styles.resultCard}>
             <Text variant="overline" muted>
-              AI Analysis
+              {t('newComplaint.aiAnalysis')}
             </Text>
             <View style={styles.resultChips}>
               <CategoryChip category={result.category} />
@@ -287,7 +278,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
             {result.transcript ? (
               <View style={styles.transcriptBox}>
                 <Text variant="overline" muted>
-                  Transcript
+                  {t('newComplaint.transcript')}
                 </Text>
                 <Text variant="bodySm" style={styles.transcriptText}>
                   “{result.transcript}”
@@ -303,14 +294,14 @@ export default function NewComplaintScreen({ navigation }: Props) {
               <View style={styles.followUpHeader}>
                 <Ionicons name="help-circle" size={16} color={palette.warning} />
                 <Text variant="overline" color={palette.warning} style={styles.followUpHeaderText}>
-                  AI has a follow-up
+                  {t('newComplaint.followUpTitle')}
                 </Text>
               </View>
               <Text variant="body" style={styles.followUpText}>
                 {pendingQuestion}
               </Text>
               <Input
-                label="Your answer"
+                label={t('newComplaint.yourAnswer')}
                 value={followUpAnswer}
                 onChangeText={setFollowUpAnswer}
                 multiline
@@ -319,7 +310,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
               />
               <View style={styles.followUpActions}>
                 <Button
-                  title="Submit Answer"
+                  title={t('newComplaint.submitAnswer')}
                   onPress={submitFollowUp}
                   loading={answeringFollowUp}
                   disabled={!followUpAnswer.trim()}
@@ -329,7 +320,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
                 />
                 <Pressable onPress={() => setPendingQuestion(null)} style={styles.skipButton} disabled={answeringFollowUp}>
                   <Text variant="caption" muted>
-                    Skip
+                    {t('common.skip')}
                   </Text>
                 </Pressable>
               </View>
@@ -340,15 +331,15 @@ export default function NewComplaintScreen({ navigation }: Props) {
             <View style={styles.refinedBanner}>
               <Ionicons name="sparkles" size={13} color={palette.success} />
               <Text variant="caption" color={palette.success} style={styles.refinedText}>
-                Report refined using your answer
+                {t('newComplaint.refined')}
               </Text>
             </View>
           </Animated.View>
         ) : null}
 
         <Animated.View entering={FadeInDown.delay(280).duration(450)} style={styles.successActions}>
-          <Button title="View my reports" onPress={() => { reset(); navigation.navigate('Home'); }} />
-          <Button title="Report another issue" onPress={reset} variant="secondary" style={styles.secondaryAction} />
+          <Button title={t('newComplaint.viewMyReports')} onPress={() => { reset(); navigation.navigate('Home'); }} />
+          <Button title={t('newComplaint.reportAnother')} onPress={reset} variant="secondary" style={styles.secondaryAction} />
         </Animated.View>
       </Screen>
     );
@@ -358,9 +349,9 @@ export default function NewComplaintScreen({ navigation }: Props) {
   return (
     <Screen scroll edges={{ top: true }} bottomInset={TAB_BAR_HEIGHT + insets.bottom}>
       <Animated.View entering={FadeInDown.duration(420)} style={styles.header}>
-        <Text variant="h1">Report an issue</Text>
+        <Text variant="h1">{t('newComplaint.title')}</Text>
         <Text variant="bodySm" muted style={styles.headerSub}>
-          Describe it however is easiest — AI handles the rest.
+          {t('newComplaint.subtitle')}
         </Text>
       </Animated.View>
 
@@ -369,12 +360,12 @@ export default function NewComplaintScreen({ navigation }: Props) {
       {mode === 'text' ? (
         <Animated.View key="text" entering={FadeIn.duration(220)} exiting={FadeOut.duration(120)}>
           <Input
-            label="What's the problem?"
+            label={t('newComplaint.problemLabel')}
             value={text}
             onChangeText={setText}
             multiline
             multilineHeight={140}
-            placeholder="e.g. Large pothole on the main road near the bus stop, cars keep hitting it…"
+            placeholder={t('newComplaint.problemPlaceholder')}
           />
         </Animated.View>
       ) : null}
@@ -400,19 +391,19 @@ export default function NewComplaintScreen({ navigation }: Props) {
               <View style={styles.voiceReady}>
                 <Ionicons name="checkmark-circle" size={16} color={palette.success} />
                 <Text variant="label" color={palette.success}>
-                  {` Recorded · ${formatDuration(elapsed)}`}
+                  {` ${t('newComplaint.voiceRecorded', { duration: formatDuration(elapsed) })}`}
                 </Text>
               </View>
             ) : (
               <Text variant="bodySm" muted center style={styles.voiceStatus}>
-                Tap to record. Speak in any language —{'\n'}Tamil, Hindi or English.
+                {t('newComplaint.voiceIdle')}
               </Text>
             )}
 
             {recordedUri && !isRecording ? (
               <Pressable onPress={startRecording} style={styles.recordAgain}>
                 <Text variant="caption" color={palette.primary}>
-                  Record again
+                  {t('newComplaint.recordAgain')}
                 </Text>
               </Pressable>
             ) : null}
@@ -431,11 +422,11 @@ export default function NewComplaintScreen({ navigation }: Props) {
             </Animated.View>
           ) : (
             <View style={styles.pickRow}>
-              <PickTile icon="camera" label="Take photo" onPress={() => pickImage(true)} />
-              <PickTile icon="images" label="Choose photo" onPress={() => pickImage(false)} />
+              <PickTile icon="camera" label={t('newComplaint.takePhoto')} onPress={() => pickImage(true)} />
+              <PickTile icon="images" label={t('newComplaint.choosePhoto')} onPress={() => pickImage(false)} />
             </View>
           )}
-          <Input label="Caption (optional)" value={caption} onChangeText={setCaption} containerStyle={styles.caption} />
+          <Input label={t('newComplaint.captionLabel')} value={caption} onChangeText={setCaption} containerStyle={styles.caption} />
         </Animated.View>
       ) : null}
 
@@ -444,15 +435,15 @@ export default function NewComplaintScreen({ navigation }: Props) {
           <Ionicons name="location" size={17} color={coords ? palette.white : palette.primary} />
         </View>
         <View style={styles.locationText}>
-          <Text variant="label">{coords ? (locationName || 'Location captured') : locating ? 'Getting location…' : 'Add your location'}</Text>
+          <Text variant="label">{coords ? t('newComplaint.locationCaptured') : locating ? t('newComplaint.gettingLocation') : t('newComplaint.addLocation')}</Text>
           <Text variant="caption" muted>
-            {coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'Required — pins your report on the map'}
+            {coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : t('newComplaint.locationRequired')}
           </Text>
         </View>
         <Ionicons name={coords ? 'checkmark-circle' : 'chevron-forward'} size={18} color={coords ? palette.success : palette.textFaint} />
       </Pressable>
 
-      <Button title="Submit Report" onPress={submit} loading={submitting} size="lg" style={styles.submit} />
+      <Button title={t('newComplaint.submit')} onPress={submit} loading={submitting} size="lg" style={styles.submit} />
     </Screen>
   );
 }

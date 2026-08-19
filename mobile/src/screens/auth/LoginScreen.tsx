@@ -6,6 +6,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { ApiError } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
 import { Button, Input, Screen, Text, useToast } from '../../components/ui';
+import { useLanguage } from '../../i18n';
 import { AuthStackParamList } from '../../navigation/types';
 import { gradients, palette, radii, shadows, spacing, stagger } from '../../theme';
 
@@ -14,6 +15,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 export default function LoginScreen({ navigation }: Props) {
   const { login } = useAuth();
   const toast = useToast();
+  const { t } = useLanguage();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export default function LoginScreen({ navigation }: Props) {
 
   async function handleLogin() {
     if (!identifier.trim() || !password) {
-      setError('Enter your phone/email and password.');
+      setError(t('login.errEmpty'));
       return;
     }
     setError(null);
@@ -32,9 +34,9 @@ export default function LoginScreen({ navigation }: Props) {
       const message =
         err instanceof ApiError
           ? err.status === 401
-            ? 'Incorrect phone/email or password.'
+            ? t('login.errIncorrect')
             : err.message
-          : 'Could not reach the server. Check your connection.';
+          : t('login.errNetwork');
       setError(message);
       toast.error(message);
     } finally {
@@ -51,16 +53,16 @@ export default function LoginScreen({ navigation }: Props) {
           </Text>
         </LinearGradient>
         <Text variant="h1" style={styles.title}>
-          Welcome back
+          {t('login.welcomeBack')}
         </Text>
         <Text variant="body" muted center style={styles.subtitle}>
-          Sign in to report issues and track what your city is building.
+          {t('login.subtitle')}
         </Text>
       </Animated.View>
 
       <Animated.View entering={FadeInUp.delay(stagger(1)).duration(450)}>
         <Input
-          label="Phone or Email"
+          label={t('login.phoneOrEmail')}
           icon="👤"
           value={identifier}
           onChangeText={(t) => {
@@ -75,11 +77,11 @@ export default function LoginScreen({ navigation }: Props) {
 
       <Animated.View entering={FadeInUp.delay(stagger(2)).duration(450)}>
         <Input
-          label="Password"
+          label={t('login.password')}
           icon="🔒"
           value={password}
-          onChangeText={(t) => {
-            setPassword(t);
+          onChangeText={(val) => {
+            setPassword(val);
             setError(null);
           }}
           secureTextEntry
@@ -89,11 +91,11 @@ export default function LoginScreen({ navigation }: Props) {
       </Animated.View>
 
       <Animated.View entering={FadeInUp.delay(stagger(3)).duration(450)} style={styles.actions}>
-        <Button title="Sign In" onPress={handleLogin} loading={loading} size="lg" />
+        <Button title={t('login.signIn')} onPress={handleLogin} loading={loading} size="lg" />
 
         <Pressable onPress={() => navigation.navigate('Register')} style={styles.linkWrap}>
           <Text variant="bodySm" muted center>
-            New here? <Text variant="label" color={palette.primary}>Create an account</Text>
+            {t('login.newHere')} <Text variant="label" color={palette.primary}>{t('login.createAccount')}</Text>
           </Text>
         </Pressable>
       </Animated.View>

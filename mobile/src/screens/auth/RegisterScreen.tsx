@@ -7,20 +7,22 @@ import { ApiError } from '../../api/client';
 import { Role } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { Button, Input, Screen, Text, useToast } from '../../components/ui';
+import { useLanguage } from '../../i18n';
 import { haptics } from '../../lib/haptics';
 import { AuthStackParamList } from '../../navigation/types';
 import { palette, radii, spacing, stagger } from '../../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
-const ROLES: { value: Role; label: string; description: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { value: 'citizen', label: 'Citizen', description: 'Report issues in my area', icon: 'person' },
-  { value: 'authority', label: 'Authority', description: 'Review and fund projects', icon: 'shield-checkmark' },
-];
-
 export default function RegisterScreen({ navigation }: Props) {
   const { registerStart, registerVerify } = useAuth();
   const toast = useToast();
+  const { t } = useLanguage();
+
+  const ROLES: { value: Role; label: string; description: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+    { value: 'citizen', label: t('register.roleCitizen'), description: t('register.roleCitizenDesc'), icon: 'person' },
+    { value: 'authority', label: t('register.roleAuthority'), description: t('register.roleAuthorityDesc'), icon: 'shield-checkmark' },
+  ];
 
   const [step, setStep] = useState<'details' | 'otp'>('details');
   const [name, setName] = useState('');
@@ -29,20 +31,21 @@ export default function RegisterScreen({ navigation }: Props) {
   const [role, setRole] = useState<Role>('citizen');
   const [aadhaar, setAadhaar] = useState('');
   const [otp, setOtp] = useState('');
+  const [devOtp, setDevOtp] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleStart() {
     if (!name.trim() || !phone.trim() || !password || !aadhaar.trim()) {
-      setError('All fields are required.');
+      setError(t('register.errAllRequired'));
       return;
     }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setError(t('register.errPasswordLength'));
       return;
     }
     if (aadhaar.replace(/\s/g, '').length !== 12) {
-      setError('Aadhaar number must be 12 digits.');
+      setError(t('register.errAadhaarLength'));
       return;
     }
     setError(null);
@@ -58,19 +61,16 @@ export default function RegisterScreen({ navigation }: Props) {
       });
       haptics.success();
       setStep('otp');
-      if (result.dev_otp) {
-        setOtp(result.dev_otp);
-        toast.success(`Demo mode: OTP is ${result.dev_otp} (no SMS gateway connected)`);
-      } else {
-        toast.success('OTP sent to your phone');
-      }
+      setOtp('');
+      setDevOtp(result.dev_otp ?? null);
+      if (!result.dev_otp) toast.success(t('register.otpSentToast'));
     } catch (err) {
       const message =
         err instanceof ApiError
           ? err.status === 409
-            ? 'An account with this phone, email, or Aadhaar number already exists.'
+            ? t('register.errConflict')
             : err.message
-          : 'Could not reach the server. Check your connection.';
+          : t('login.errNetwork');
       setError(message);
       toast.error(message);
     } finally {
@@ -80,7 +80,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
   async function handleVerify() {
     if (otp.trim().length !== 6) {
-      setError('Enter the 6-digit OTP.');
+      setError(t('register.errOtpLength'));
       return;
     }
     setError(null);
@@ -88,7 +88,7 @@ export default function RegisterScreen({ navigation }: Props) {
     try {
       await registerVerify(phone.trim(), otp.trim());
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not reach the server. Check your connection.';
+      const message = err instanceof ApiError ? err.message : t('login.errNetwork');
       setError(message);
       toast.error(message);
     } finally {
@@ -103,7 +103,7 @@ export default function RegisterScreen({ navigation }: Props) {
         style={styles.backButton}
         hitSlop={10}
         accessibilityRole="button"
-        accessibilityLabel="Go back"
+        accessibilityLabel={t('common.goBack')}
       >
         <Ionicons name="chevron-back" size={20} color={palette.text} />
       </Pressable>
@@ -111,19 +111,19 @@ export default function RegisterScreen({ navigation }: Props) {
       {step === 'details' ? (
         <>
           <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
-            <Text variant="h1">Create account</Text>
+            <Text variant="h1">{t('register.title')}</Text>
             <Text variant="body" muted style={styles.subtitle}>
-              Join UCIPS and help shape what gets built.
+              {t('register.subtitle')}
             </Text>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(stagger(1)).duration(420)}>
-            <Input label="Full name" icon="✏️" value={name} onChangeText={setName} containerStyle={styles.field} />
+            <Input label={t('register.fullName')} icon="✏️" value={name} onChangeText={setName} containerStyle={styles.field} />
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(stagger(2)).duration(420)}>
             <Input
-              label="Phone number"
+              label={t('register.phoneNumber')}
               icon="📱"
               value={phone}
               onChangeText={setPhone}
@@ -134,20 +134,20 @@ export default function RegisterScreen({ navigation }: Props) {
 
           <Animated.View entering={FadeInUp.delay(stagger(3)).duration(420)}>
             <Input
-              label="Aadhaar number"
+              label={t('register.aadhaarNumber')}
               icon="🪪"
               value={aadhaar}
               onChangeText={setAadhaar}
               keyboardType="number-pad"
               maxLength={12}
-              placeholder="12-digit Aadhaar for identity verification"
+              placeholder={t('register.aadhaarPlaceholder')}
               containerStyle={styles.field}
             />
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(stagger(4)).duration(420)}>
             <Input
-              label="Password"
+              label={t('register.password')}
               icon="🔒"
               value={password}
               onChangeText={setPassword}
@@ -159,7 +159,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
           <Animated.View entering={FadeInUp.delay(stagger(5)).duration(420)}>
             <Text variant="overline" muted style={styles.roleLabel}>
-              I am a
+              {t('register.iAmA')}
             </Text>
             <View style={styles.roleRow}>
               {ROLES.map((option) => {
@@ -189,10 +189,10 @@ export default function RegisterScreen({ navigation }: Props) {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(stagger(6)).duration(420)} style={styles.actions}>
-            <Button title="Send OTP" onPress={handleStart} loading={loading} size="lg" />
+            <Button title={t('register.sendOtp')} onPress={handleStart} loading={loading} size="lg" />
             <Pressable onPress={() => navigation.navigate('Login')} style={styles.linkWrap}>
               <Text variant="bodySm" muted center>
-                Already have an account? <Text variant="label" color={palette.primary}>Sign in</Text>
+                {t('register.alreadyHaveAccount')} <Text variant="label" color={palette.primary}>{t('register.signIn')}</Text>
               </Text>
             </Pressable>
           </Animated.View>
@@ -200,15 +200,35 @@ export default function RegisterScreen({ navigation }: Props) {
       ) : (
         <>
           <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
-            <Text variant="h1">Verify your phone</Text>
+            <Text variant="h1">{t('register.verifyTitle')}</Text>
             <Text variant="body" muted style={styles.subtitle}>
-              Enter the OTP sent to {phone}.
+              {t('register.verifySubtitle', { phone })}
             </Text>
           </Animated.View>
 
+          {devOtp ? (
+            <Animated.View entering={FadeInUp.duration(400)} style={styles.demoBanner}>
+              <Ionicons name="warning" size={16} color={palette.warning} />
+              <View style={styles.demoBannerText}>
+                <Text variant="label" color={palette.warning}>
+                  {t('register.demoModeTitle')}
+                </Text>
+                <Text variant="bodySm" muted style={styles.demoOtpLine}>
+                  {t('register.demoModeBody')} {' '}
+                  <Text variant="label" color={palette.text}>{devOtp}</Text>
+                </Text>
+                <Pressable onPress={() => setOtp(devOtp)} hitSlop={8}>
+                  <Text variant="caption" color={palette.primary} style={styles.demoFillLink}>
+                    {t('register.demoModeFill')}
+                  </Text>
+                </Pressable>
+              </View>
+            </Animated.View>
+          ) : null}
+
           <Animated.View entering={FadeInUp.delay(stagger(1)).duration(420)}>
             <Input
-              label="6-digit OTP"
+              label={t('register.otpLabel')}
               icon="🔑"
               value={otp}
               onChangeText={setOtp}
@@ -220,10 +240,10 @@ export default function RegisterScreen({ navigation }: Props) {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(stagger(2)).duration(420)} style={styles.actions}>
-            <Button title="Verify & Create Account" onPress={handleVerify} loading={loading} size="lg" />
+            <Button title={t('register.verifyButton')} onPress={handleVerify} loading={loading} size="lg" />
             <Pressable onPress={handleStart} style={styles.linkWrap}>
               <Text variant="bodySm" muted center>
-                Didn't get it? <Text variant="label" color={palette.primary}>Resend OTP</Text>
+                {t('register.didntGetIt')} <Text variant="label" color={palette.primary}>{t('register.resendOtp')}</Text>
               </Text>
             </Pressable>
           </Animated.View>
@@ -244,6 +264,19 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   header: { paddingTop: spacing.md, paddingBottom: spacing.lg },
+  demoBanner: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    borderWidth: 1.5,
+    borderColor: palette.warning,
+    backgroundColor: palette.warningSoft,
+    borderRadius: radii.md,
+    padding: spacing.base,
+    marginBottom: spacing.lg,
+  },
+  demoBannerText: { flex: 1 },
+  demoOtpLine: { marginTop: 2, lineHeight: 18 },
+  demoFillLink: { marginTop: spacing.xs, textDecorationLine: 'underline' },
   subtitle: { marginTop: spacing.xs },
   field: { marginBottom: spacing.md },
   roleLabel: { marginTop: spacing.xs, marginBottom: spacing.sm },

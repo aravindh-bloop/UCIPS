@@ -16,6 +16,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import BrandSplash from './src/components/BrandSplash';
 import { ToastProvider } from './src/components/ui';
 import { AuthProvider } from './src/auth/AuthContext';
+import { LanguageProvider } from './src/i18n';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationTheme } from './src/navigation/navigationTheme';
 import { ThemeProvider } from './src/theme/ThemeContext';
@@ -47,11 +48,13 @@ export default function App() {
         ) : (
           <ToastProvider>
             <ThemeProvider>
-              <AuthProvider>
-                <NavigationContainer theme={navigationTheme}>
-                  <RootNavigator />
-                </NavigationContainer>
-              </AuthProvider>
+              <LanguageProvider>
+                <AuthProvider>
+                  <NavigationContainer theme={navigationTheme}>
+                    <RootNavigator />
+                  </NavigationContainer>
+                </AuthProvider>
+              </LanguageProvider>
             </ThemeProvider>
           </ToastProvider>
         )}
