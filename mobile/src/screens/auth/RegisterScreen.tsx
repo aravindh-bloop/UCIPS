@@ -19,17 +19,21 @@ const ROLES: { value: Role; label: string; description: string; icon: keyof type
 ];
 
 export default function RegisterScreen({ navigation }: Props) {
-  const { register } = useAuth();
+  const { registerStart, registerVerify } = useAuth();
   const toast = useToast();
+
+  const [step, setStep] = useState<'details' | 'otp'>('details');
   const [name, setName] = useState('');
-  const [contact, setContact] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('citizen');
+  const [aadhaar, setAadhaar] = useState('');
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleRegister() {
-    if (!name.trim() || !contact.trim() || !password) {
+  async function handleStart() {
+    if (!name.trim() || !phone.trim() || !password || !aadhaar.trim()) {
       setError('All fields are required.');
       return;
     }
@@ -37,24 +41,54 @@ export default function RegisterScreen({ navigation }: Props) {
       setError('Password must be at least 6 characters.');
       return;
     }
-    const isEmail = contact.includes('@');
+    if (aadhaar.replace(/\s/g, '').length !== 12) {
+      setError('Aadhaar number must be 12 digits.');
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
-      await register({
+      const result = await registerStart({
         name: name.trim(),
+        phone: phone.trim(),
         password,
         role,
         preferred_language: 'en',
-        ...(isEmail ? { email: contact.trim() } : { phone: contact.trim() }),
+        aadhaar_number: aadhaar.trim(),
       });
+      haptics.success();
+      setStep('otp');
+      if (result.dev_otp) {
+        setOtp(result.dev_otp);
+        toast.success(`Demo mode: OTP is ${result.dev_otp} (no SMS gateway connected)`);
+      } else {
+        toast.success('OTP sent to your phone');
+      }
     } catch (err) {
       const message =
         err instanceof ApiError
           ? err.status === 409
-            ? 'An account with this phone/email already exists.'
+            ? 'An account with this phone, email, or Aadhaar number already exists.'
             : err.message
           : 'Could not reach the server. Check your connection.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerify() {
+    if (otp.trim().length !== 6) {
+      setError('Enter the 6-digit OTP.');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      await registerVerify(phone.trim(), otp.trim());
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not reach the server. Check your connection.';
       setError(message);
       toast.error(message);
     } finally {
@@ -65,7 +99,7 @@ export default function RegisterScreen({ navigation }: Props) {
   return (
     <Screen scroll edges={{ top: true, bottom: true }}>
       <Pressable
-        onPress={() => navigation.goBack()}
+        onPress={() => (step === 'otp' ? setStep('details') : navigation.goBack())}
         style={styles.backButton}
         hitSlop={10}
         accessibilityRole="button"
@@ -74,80 +108,127 @@ export default function RegisterScreen({ navigation }: Props) {
         <Ionicons name="chevron-back" size={20} color={palette.text} />
       </Pressable>
 
-      <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
-        <Text variant="h1">Create account</Text>
-        <Text variant="body" muted style={styles.subtitle}>
-          Join UCIPS and help shape what gets built.
-        </Text>
-      </Animated.View>
+      {step === 'details' ? (
+        <>
+          <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
+            <Text variant="h1">Create account</Text>
+            <Text variant="body" muted style={styles.subtitle}>
+              Join UCIPS and help shape what gets built.
+            </Text>
+          </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(stagger(1)).duration(420)}>
-        <Input label="Full name" icon="✏️" value={name} onChangeText={setName} containerStyle={styles.field} />
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(stagger(1)).duration(420)}>
+            <Input label="Full name" icon="✏️" value={name} onChangeText={setName} containerStyle={styles.field} />
+          </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(stagger(2)).duration(420)}>
-        <Input
-          label="Phone or Email"
-          icon="👤"
-          value={contact}
-          onChangeText={setContact}
-          autoCapitalize="none"
-          autoCorrect={false}
-          containerStyle={styles.field}
-        />
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(stagger(2)).duration(420)}>
+            <Input
+              label="Phone number"
+              icon="📱"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              containerStyle={styles.field}
+            />
+          </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(stagger(3)).duration(420)}>
-        <Input
-          label="Password"
-          icon="🔒"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          error={error}
-          containerStyle={styles.field}
-        />
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(stagger(3)).duration(420)}>
+            <Input
+              label="Aadhaar number"
+              icon="🪪"
+              value={aadhaar}
+              onChangeText={setAadhaar}
+              keyboardType="number-pad"
+              maxLength={12}
+              placeholder="12-digit Aadhaar for identity verification"
+              containerStyle={styles.field}
+            />
+          </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(stagger(4)).duration(420)}>
-        <Text variant="overline" muted style={styles.roleLabel}>
-          I am a
-        </Text>
-        <View style={styles.roleRow}>
-          {ROLES.map((option) => {
-            const selected = role === option.value;
-            return (
-              <Pressable
-                key={option.value}
-                style={[styles.roleCard, selected && styles.roleCardActive]}
-                onPress={() => {
-                  haptics.select();
-                  setRole(option.value);
-                }}
-              >
-                <View style={[styles.roleIcon, selected && styles.roleIconActive]}>
-                  <Ionicons name={option.icon} size={17} color={selected ? palette.white : palette.textMuted} />
-                </View>
-                <Text variant="label" color={selected ? palette.primary : palette.text}>
-                  {option.label}
-                </Text>
-                <Text variant="caption" muted style={styles.roleDescription}>
-                  {option.description}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(stagger(4)).duration(420)}>
+            <Input
+              label="Password"
+              icon="🔒"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              error={error}
+              containerStyle={styles.field}
+            />
+          </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(stagger(5)).duration(420)} style={styles.actions}>
-        <Button title="Create Account" onPress={handleRegister} loading={loading} size="lg" />
-        <Pressable onPress={() => navigation.navigate('Login')} style={styles.linkWrap}>
-          <Text variant="bodySm" muted center>
-            Already have an account? <Text variant="label" color={palette.primary}>Sign in</Text>
-          </Text>
-        </Pressable>
-      </Animated.View>
+          <Animated.View entering={FadeInUp.delay(stagger(5)).duration(420)}>
+            <Text variant="overline" muted style={styles.roleLabel}>
+              I am a
+            </Text>
+            <View style={styles.roleRow}>
+              {ROLES.map((option) => {
+                const selected = role === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    style={[styles.roleCard, selected && styles.roleCardActive]}
+                    onPress={() => {
+                      haptics.select();
+                      setRole(option.value);
+                    }}
+                  >
+                    <View style={[styles.roleIcon, selected && styles.roleIconActive]}>
+                      <Ionicons name={option.icon} size={17} color={selected ? palette.white : palette.textMuted} />
+                    </View>
+                    <Text variant="label" color={selected ? palette.primary : palette.text}>
+                      {option.label}
+                    </Text>
+                    <Text variant="caption" muted style={styles.roleDescription}>
+                      {option.description}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(stagger(6)).duration(420)} style={styles.actions}>
+            <Button title="Send OTP" onPress={handleStart} loading={loading} size="lg" />
+            <Pressable onPress={() => navigation.navigate('Login')} style={styles.linkWrap}>
+              <Text variant="bodySm" muted center>
+                Already have an account? <Text variant="label" color={palette.primary}>Sign in</Text>
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </>
+      ) : (
+        <>
+          <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
+            <Text variant="h1">Verify your phone</Text>
+            <Text variant="body" muted style={styles.subtitle}>
+              Enter the OTP sent to {phone}.
+            </Text>
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(stagger(1)).duration(420)}>
+            <Input
+              label="6-digit OTP"
+              icon="🔑"
+              value={otp}
+              onChangeText={setOtp}
+              keyboardType="number-pad"
+              maxLength={6}
+              error={error}
+              containerStyle={styles.field}
+            />
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(stagger(2)).duration(420)} style={styles.actions}>
+            <Button title="Verify & Create Account" onPress={handleVerify} loading={loading} size="lg" />
+            <Pressable onPress={handleStart} style={styles.linkWrap}>
+              <Text variant="bodySm" muted center>
+                Didn't get it? <Text variant="label" color={palette.primary}>Resend OTP</Text>
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </>
+      )}
     </Screen>
   );
 }

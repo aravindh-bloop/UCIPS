@@ -14,6 +14,7 @@ const ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: 
   Report: { active: 'add-circle', inactive: 'add-circle-outline' },
   Nearby: { active: 'location', inactive: 'location-outline' },
   Hotspots: { active: 'flame', inactive: 'flame-outline' },
+  Reports: { active: 'document-text', inactive: 'document-text-outline' },
   Projects: { active: 'construct', inactive: 'construct-outline' },
   Budget: { active: 'wallet', inactive: 'wallet-outline' },
   Profile: { active: 'person-circle', inactive: 'person-circle-outline' },

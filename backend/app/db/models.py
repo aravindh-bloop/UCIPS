@@ -23,9 +23,27 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(16), default="citizen")  # citizen | authority
     preferred_language: Mapped[str] = mapped_column(String(8), default="en")
+    aadhaar_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    aadhaar_last4: Mapped[str | None] = mapped_column(String(4), nullable=True)
+    phone_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     complaints: Mapped[list["Complaint"]] = relationship(back_populates="user")
+
+
+class OtpVerification(Base):
+    """Pending-registration OTP state. Holds the not-yet-created account's details (as JSON)
+    until the OTP is verified, so no user row exists until identity is confirmed."""
+
+    __tablename__ = "otp_verifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    phone: Mapped[str] = mapped_column(String(32), index=True)
+    otp_hash: Mapped[str] = mapped_column(String(255))
+    payload_json: Mapped[str] = mapped_column(Text)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class Cluster(Base):
