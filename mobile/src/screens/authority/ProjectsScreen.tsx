@@ -10,7 +10,7 @@ import { Card, EmptyState, ScoreBar, SkeletonList, StatCard, StatRow, StatusChip
 import { haptics } from '../../lib/haptics';
 import { categoryStyle, palette, radii, spacing, stagger, TAB_BAR_HEIGHT } from '../../theme';
 
-const RANK_COLORS = ['#F59E0B', '#94A3B8', '#B45309'];
+const RANK_COLORS = ['#D4A843', '#94A3B8', '#B45309'];
 
 function formatCurrency(value: number): string {
   if (value >= 10_000_000) return `₹${(value / 10_000_000).toFixed(2)} Cr`;

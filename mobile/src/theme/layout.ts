@@ -25,43 +25,43 @@ export const radii = {
 } as const;
 
 /**
- * Colored (indigo-tinted) shadows rather than neutral grey -- on a light theme this is
- * most of what separates a "premium" surface from a default React Native card.
+ * Dark-theme shadows: true-black base with low opacity so cards lift subtly
+ * off the dark surface without looking muddy.
  */
 export const shadows: Record<'none' | 'sm' | 'md' | 'lg' | 'xl' | 'primary', ViewStyle> = {
   none: {},
   sm: {
-    shadowColor: '#1E2A4A',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
     elevation: 1,
   },
   md: {
-    shadowColor: '#1E2A4A',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 3,
   },
   lg: {
-    shadowColor: '#1E2A4A',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.35,
     shadowRadius: 24,
     elevation: 8,
   },
   xl: {
-    shadowColor: '#1E2A4A',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.4,
     shadowRadius: 36,
     elevation: 14,
   },
   primary: {
     shadowColor: palette.primary,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.32,
+    shadowOpacity: 0.35,
     shadowRadius: 18,
     elevation: 8,
   },

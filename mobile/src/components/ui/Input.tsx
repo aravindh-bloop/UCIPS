@@ -28,9 +28,13 @@ export function Input({
   multilineHeight = 110,
   onFocus,
   onBlur,
+  placeholder,
   ...rest
 }: InputProps) {
   const [focused, setFocused] = useState(false);
+  // The floating label is the only prompt shown inside the field itself, so it never has to
+  // share space with a native placeholder. Any `placeholder` text is rendered as a separate
+  // example caption below the field instead (only while it's empty).
   const active = focused || !!value;
 
   const progress = useSharedValue(active ? 1 : 0);
@@ -92,6 +96,10 @@ export function Input({
         <Text variant="caption" color={palette.danger} style={styles.error}>
           {error}
         </Text>
+      ) : !error && placeholder && !value ? (
+        <Text variant="caption" faint style={styles.error} numberOfLines={1}>
+          {placeholder}
+        </Text>
       ) : null}
     </View>
   );
@@ -122,6 +130,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     minHeight: 22,
   },
-  inputMultiline: { textAlignVertical: 'top', minHeight: 70 },
+  inputMultiline: { textAlignVertical: 'top', minHeight: 70, marginTop: 20 },
   error: { marginTop: spacing.xs, marginLeft: spacing.xs },
 });

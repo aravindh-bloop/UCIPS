@@ -96,6 +96,39 @@ The AI follow-up question was being shown but had no way to answer it — a dead
 - Verified live: "mosquitoes near my house" → follow-up asked about stagnant water → answering it correctly reclassified `waste_management` → `drainage`, bumped severity 2→4, and the complaint got clustered — genuine re-reasoning, not cosmetic.
 - **Mobile**: `NewComplaintScreen`'s success state now shows an inline answer input + Submit/Skip when a follow-up is pending, and displays a "Report refined" confirmation after — the AI Analysis card above updates live since it's bound to the same `result` state.
 
+## Visual map for hotspots (closes a gap flagged against the Phoenix Hacks deck: "Geo-tagged clusters on Map")
+
+Was previously list-only (lat/lng shown as text). Added a real map using `react-native-maps` — confirmed Expo Go compatible for SDK 57 with no dev-client rebuild and no API key setup needed for Expo Go testing specifically.
+
+- **New `src/components/HotspotMap.tsx`** — reusable map with custom category-colored circular markers (size scales with relative demand score), auto-fits viewport to all hotspots via `fitToCoordinates`.
+- **Authority `HotspotsScreen`** and **Citizen `NearbyHotspotsScreen`** both got a List/Map segmented toggle. Tapping a marker shows a floating preview card (summary + demand bar; authority version adds a "View Complaints" button that navigates to `HotspotDetail`) rather than navigating immediately — standard map UX, avoids a mis-tap losing your place on the map.
+- If maps fail to render in Expo Go (e.g. an environment without Google Play services), the List mode still works standalone — the toggle isn't a hard dependency between the two views.
+
+**Update — pivoted away from `react-native-maps`.** Chased the Expo-Go tile-loading issue all the way through: built a full custom dev client (JDK 17 + Android SDK/NDK installed from scratch on D:, `expo prebuild` + `expo run:android`, real Google Maps API key wired into the manifest) specifically to rule out Expo Go's shared-key limitation. Logcat confirmed the exact cause once the dev client was in place: `Authorization failure` / `Error requesting API token, StatusCode=INVALID_ARGUMENT` — Google Maps Platform requires a **billing account linked to the project**, even for free-tier usage, on top of "Maps SDK for Android" being enabled. User decided not to add billing.
+
+**Final approach**: `HotspotMap.tsx` rewritten as a self-contained schematic geo-scatter view — projects each hotspot's lat/lng into relative x/y position within a bordered canvas (min/max bounding box + margin), no tile provider, no API key, no billing. Same external props (`hotspots`, `onSelectHotspot`, `height`) as the old Google-Maps-backed version, so `HotspotsScreen.tsx` and `NearbyHotspotsScreen.tsx` needed zero changes. Correctly preserves each hotspot's position *relative to the others* (which is what actually matters for spotting where demand clusters sit), with an honest "Schematic view — not to scale" caption rather than pretending to be a real map. Pure JS change, hot-reloads through the already-built dev client — no rebuild needed.
+
+`react-native-maps` and the Maps API key setup are left in place (uninstalling would force another native rebuild for no benefit) but are unused — `HotspotMap.tsx` no longer imports them. If real map tiles are wanted later, billing is the only remaining step; everything else (dev client, key, manifest) is already done.
+
+**Update — the schematic view wasn't good enough, and the Google Demo Key didn't work either.** The scatter-plot read as "a grey box with dots" on-device, which is fair — it wasn't a map. Attempted a return to real Google Maps using a **Maps Platform Demo Key** (`mapsplatform.google.com/maps-demo-key`), on the theory that Google issues those to bypass the billing requirement for prototypes. Wired it into `app.json` + `AndroidManifest.xml`, rebuilt, and logcat gave the identical rejection as the original key:
+
+```
+E Google Maps Android API: Error requesting API token. StatusCode=INVALID_ARGUMENT
+E Google Android Maps SDK: Authorization failure.
+```
+
+**Conclusion: the demo key only authorizes the web Maps *JavaScript* API, not the Android native SDK.** The Android SDK requires linked billing, full stop — there is no key type that avoids it. Two separate keys, two rebuilds, same failure. Google Maps on Android is a dead end for this project.
+
+**Final approach — Leaflet.js + OpenStreetMap in a WebView** (`react-native-webview`). This is a *real* map — actual streets, coastlines, labels, pinch-zoom, pan — with **no API key and no billing**, so it cannot break on demo day for account reasons. Details:
+- Basemap is CARTO's `dark_all` OSM raster tiles, which match the app's dark-luxury palette natively instead of needing a restyle.
+- Markers are Leaflet `divIcon`s built from the app's own `categoryStyle()` colors/icons, so map pins and list chips stay visually identical. Size scales with demand score; clusters with >1 report get a gold count badge; demand ≥5 gets a pulsing CSS ring.
+- Popups are CSS-themed to `palette.surface`/`border` so they read as part of the app, not as a browser artifact.
+- Marker taps `postMessage` the cluster id back to RN, resolved against a `hotspotsRef` so taps stay correct without rebuilding the HTML (which would remount the map).
+- WebView reports `ready` on first tile load and `error` on tile/load failure, driving a themed overlay — a spinner while loading, and an explicit "Map needs an internet connection → switch to List view" state on failure. **This is the fix for the original "black box with no explanation" problem**: the map can no longer fail silently.
+- The `<` characters in injected JSON are escaped so a ward name containing `</script>` can't break out of the script tag.
+
+`react-native-maps` and the (non-functional) Google key are left installed but unused — removing them buys nothing and risks another build cycle. Adding `react-native-webview` is a native dependency change, so this needed a Gradle rebuild (`cd android && ./gradlew installDebug`, which builds + installs without touching the running Metro instance).
+
 ### Mobile gotchas
 - Phone connects over **wifi** (LAN IP), not purely via USB — Expo CLI auto-detects this. `adb reverse tcp:8010 tcp:8010` (backend) is still required regardless, since the app's own `fetch()` calls run on-device and need `localhost:8010` forwarded to the dev machine. `adb reverse` mappings reset whenever the USB session drops (sleep, cable unplug, `adb` restart) — re-run `npm run reverse` (or `npm run dev:android`) if requests suddenly can't reach the backend.
 - **React Native's FormData is broken for file uploads on this RN version (0.86, new architecture)** — `formData.append('file', {uri, name, type})` + `fetch()` throws `Error: Unsupported FormDataPart implementation` on Android. This is a known, still-unresolved new-architecture regression, not a mistake in our code. Fixed by switching to `expo-file-system`'s native `File.upload()` (`uploadType: MULTIPART`) instead of fetch+FormData for voice/image uploads — see `uploadFile()` in `mobile/src/api/client.ts`. If any future upload feature is added, use `uploadFile()`, not `request()` with a `FormData` body.

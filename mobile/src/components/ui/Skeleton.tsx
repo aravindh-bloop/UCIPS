@@ -40,7 +40,7 @@ export function Skeleton({
     <View style={[{ width, height, borderRadius: radius, backgroundColor: palette.surfaceSunken, overflow: 'hidden' }, style]}>
       <Animated.View style={[StyleSheet.absoluteFill, shimmerStyle]}>
         <LinearGradient
-          colors={['transparent', 'rgba(255,255,255,0.85)', 'transparent']}
+          colors={['transparent', 'rgba(255,255,255,0.08)', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ width: SHIMMER_WIDTH, height: '100%' }}

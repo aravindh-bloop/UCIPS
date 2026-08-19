@@ -64,6 +64,16 @@ export default function RegisterScreen({ navigation }: Props) {
 
   return (
     <Screen scroll edges={{ top: true, bottom: true }}>
+      <Pressable
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+        hitSlop={10}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+      >
+        <Ionicons name="chevron-back" size={20} color={palette.text} />
+      </Pressable>
+
       <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
         <Text variant="h1">Create account</Text>
         <Text variant="body" muted style={styles.subtitle}>
@@ -143,7 +153,16 @@ export default function RegisterScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingTop: spacing.xxl, paddingBottom: spacing.lg },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.pill,
+    backgroundColor: palette.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  header: { paddingTop: spacing.md, paddingBottom: spacing.lg },
   subtitle: { marginTop: spacing.xs },
   field: { marginBottom: spacing.md },
   roleLabel: { marginTop: spacing.xs, marginBottom: spacing.sm },
