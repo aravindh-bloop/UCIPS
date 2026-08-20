@@ -59,6 +59,22 @@ export interface FeedbackOut {
   created_at: string;
 }
 
+export type ProgressState = 'done' | 'current' | 'pending';
+
+export interface ProgressStage {
+  key: string;
+  label: string;
+  state: ProgressState;
+  detail: string | null;
+  at: string | null;
+}
+
+export interface ComplaintProgressOut {
+  complaint_id: number;
+  reference_code: string;
+  stages: ProgressStage[];
+}
+
 export interface ClusterOut {
   id: number;
   centroid_lat: number;
@@ -99,4 +115,102 @@ export interface BudgetRunOut {
   created_at: string;
   selected: ProjectOut[];
   excluded: ProjectOut[];
+}
+
+// ---- My Finance ----
+
+export interface SchemeItem {
+  name: string;
+  provider: string;
+  eligibility: string;
+  benefit: string;
+  how_to_apply: string;
+}
+
+export interface SchemeSource {
+  title: string;
+  uri: string;
+}
+
+export interface SchemeDiscoverResponse {
+  query_id: number;
+  schemes: SchemeItem[];
+  sources: SchemeSource[];
+  cached: boolean;
+  grounded: boolean;
+}
+
+export type SchemeGrievanceStatus = 'received' | 'diagnosed' | 'clustered' | 'escalated' | 'resolved';
+
+export interface SchemeGrievanceOut {
+  id: number;
+  scheme_name: string;
+  raw_text: string;
+  failure_description: string | null;
+  follow_up_question: string | null;
+  status: SchemeGrievanceStatus;
+  created_at: string;
+}
+
+export interface SchemeGrievanceClusterOut {
+  id: number;
+  scheme_name: string;
+  failure_signature: string;
+  member_count: number;
+  escalation_summary: string | null;
+  created_at: string;
+}
+
+// ---- Infrastructure Bonds + Equity Monitor (static demo data) ----
+
+export type IncomeBracket = 'low' | 'middle' | 'high';
+export type BondInvestmentStage =
+  | 'invested'
+  | 'identity_verified'
+  | 'funds_confirmed'
+  | 'allocated'
+  | 'project_underway'
+  | 'matured';
+
+export interface BondInvestmentOut {
+  id: number;
+  investor_name: string;
+  income_bracket: IncomeBracket;
+  amount: number;
+  aadhaar_verified: boolean;
+  verification_status: 'pending' | 'verified' | 'flagged';
+  stage: BondInvestmentStage;
+  invested_at: string;
+  tracker: ProgressStage[];
+}
+
+export interface EquityBreakdownOut {
+  low_amount: number;
+  middle_amount: number;
+  high_amount: number;
+  low_count: number;
+  middle_count: number;
+  high_count: number;
+  equity_gap_flagged: boolean;
+  equity_gap_reason: string | null;
+}
+
+export interface BondOut {
+  id: number;
+  project_id: number | null;
+  project_title: string | null;
+  title: string;
+  description: string;
+  target_amount: number;
+  raised_amount: number;
+  interest_rate: number;
+  tenure_years: number;
+  status: string;
+  investor_count: number;
+  created_at: string;
+}
+
+export interface BondDetailOut extends BondOut {
+  investments: BondInvestmentOut[];
+  equity: EquityBreakdownOut;
 }

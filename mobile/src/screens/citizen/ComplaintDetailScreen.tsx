@@ -7,14 +7,15 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { ApiError } from '../../api/client';
 import * as complaintsApi from '../../api/complaints';
-import { ComplaintOut, FeedbackOut } from '../../api/types';
+import { ComplaintOut, ComplaintProgressOut, FeedbackOut } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { API_BASE_URL } from '../../config';
-import { Button, Card, Input, Screen, SeverityChip, Skeleton, StatusChip, Text, useToast } from '../../components/ui';
+import { Button, Card, Input, ProgressTracker, Screen, SeverityChip, Skeleton, StatusChip, Text, useToast } from '../../components/ui';
 import { haptics } from '../../lib/haptics';
 import { CitizenStackParamList, AuthorityStackParamList } from '../../navigation/types';
 import { categoryStyle, palette, radii, spacing, spring } from '../../theme';
 import { useLanguage } from '../../i18n';
+import { localeForLanguage } from '../../i18n/locale';
 
 type Props = NativeStackScreenProps<CitizenStackParamList | AuthorityStackParamList, 'ComplaintDetail'>;
 
@@ -26,6 +27,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
 
   const [complaint, setComplaint] = useState<ComplaintOut | null>(null);
   const [feedback, setFeedback] = useState<FeedbackOut | null>(null);
+  const [progress, setProgress] = useState<ComplaintProgressOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState('');
@@ -44,6 +46,11 @@ export default function ComplaintDetailScreen({ route }: Props) {
       setFeedback(await complaintsApi.getFeedback(token, complaintId));
     } catch {
       setFeedback(null); // 404 = no feedback yet, which is normal
+    }
+    try {
+      setProgress(await complaintsApi.getProgress(token, complaintId));
+    } catch {
+      setProgress(null); // tracker is supplementary -- never block the screen on it
     }
   }, [token, complaintId, toast, t]);
 
@@ -104,7 +111,7 @@ export default function ComplaintDetailScreen({ route }: Props) {
             </View>
             <View style={styles.heroChip}>
               <Text variant="caption" color={palette.white}>
-                {created.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {created.toLocaleDateString(localeForLanguage(language), { day: 'numeric', month: 'short', year: 'numeric' })}
               </Text>
             </View>
           </View>
@@ -115,6 +122,17 @@ export default function ComplaintDetailScreen({ route }: Props) {
         <StatusChip status={complaint.status} />
         <SeverityChip severity={complaint.severity} />
       </Animated.View>
+
+      {progress ? (
+        <Animated.View entering={FadeInDown.delay(110).duration(420)}>
+          <Card style={styles.card}>
+            <Text variant="overline" muted style={styles.trackerHeading}>
+              {t('detail.trackTitle')}
+            </Text>
+            <ProgressTracker stages={progress.stages} />
+          </Card>
+        </Animated.View>
+      ) : null}
 
       <Animated.View entering={FadeInDown.delay(140).duration(420)}>
         <Card style={styles.card}>
@@ -268,6 +286,7 @@ const styles = StyleSheet.create({
   },
   chipRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.base },
   card: { marginTop: spacing.md },
+  trackerHeading: { marginBottom: spacing.base },
   summary: { marginTop: spacing.xs },
   transcript: { marginTop: spacing.xs, fontStyle: 'italic' },
   photo: { width: '100%', height: 210, borderRadius: radii.lg, marginTop: spacing.md, backgroundColor: palette.surfaceAlt },

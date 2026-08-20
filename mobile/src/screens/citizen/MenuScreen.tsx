@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, useToast } from '../../components/ui';
@@ -32,6 +32,7 @@ export default function MenuScreen({ navigation }: Props) {
   const toast = useToast();
   const { theme, toggleTheme } = useAppTheme();
   const { language, setLanguage, t } = useLanguage();
+  const [languageOpen, setLanguageOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -41,13 +42,18 @@ export default function MenuScreen({ navigation }: Props) {
     }
   };
 
-  function openLanguagePicker() {
-    Alert.alert(t('language.title'), t('language.subtitle'), [
-      { text: t('language.english'), onPress: () => setLanguage('en') },
-      { text: t('language.tamil'), onPress: () => setLanguage('ta') },
-      { text: t('common.cancel'), style: 'cancel' },
-    ]);
-  }
+  const languageOptions = [
+    { value: 'en' as const, label: t('language.english') },
+    { value: 'ta' as const, label: t('language.tamil') },
+    { value: 'hi' as const, label: t('language.hindi') },
+    { value: 'te' as const, label: t('language.telugu') },
+    { value: 'ml' as const, label: t('language.malayalam') },
+    { value: 'kn' as const, label: t('language.kannada') },
+    { value: 'bn' as const, label: t('language.bengali') },
+    { value: 'mr' as const, label: t('language.marathi') },
+    { value: 'gu' as const, label: t('language.gujarati') },
+    { value: 'pa' as const, label: t('language.punjabi') },
+  ];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -76,11 +82,18 @@ export default function MenuScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.section}>
+          <Text variant="overline" muted style={styles.sectionTitle}>{t('finance.title')}</Text>
+          <View style={styles.card}>
+            <MenuItem icon="wallet-outline" label={t('finance.title')} onPress={() => navigation.navigate('MyFinance')} />
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text variant="overline" muted style={styles.sectionTitle}>{t('menu.preferences')}</Text>
           <View style={styles.card}>
             <MenuItem icon={theme === 'dark' ? "moon-outline" : "sunny-outline"} label={theme === 'dark' ? t('menu.darkMode') : t('menu.lightMode')} onPress={toggleTheme} />
             <View style={styles.divider} />
-            <MenuItem icon="language-outline" label={`${t('menu.language')} (${language === 'ta' ? t('language.tamil') : t('language.english')})`} onPress={openLanguagePicker} />
+            <MenuItem icon="language-outline" label={`${t('menu.language')} (${languageOptions.find((option) => option.value === language)?.label})`} onPress={() => setLanguageOpen(true)} />
           </View>
         </View>
 
@@ -90,6 +103,28 @@ export default function MenuScreen({ navigation }: Props) {
           </View>
         </View>
       </ScrollView>
+
+      <Modal visible={languageOpen} transparent animationType="fade" onRequestClose={() => setLanguageOpen(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setLanguageOpen(false)}>
+          <Pressable style={styles.languageDropdown} onPress={(event) => event.stopPropagation()}>
+            <Text variant="h3">{t('language.title')}</Text>
+            <Text variant="bodySm" muted style={styles.languageSubtitle}>{t('language.subtitle')}</Text>
+            {languageOptions.map((option) => (
+              <Pressable
+                key={option.value}
+                style={[styles.languageOption, option.value === language && styles.languageOptionActive]}
+                onPress={() => {
+                  setLanguage(option.value);
+                  setLanguageOpen(false);
+                }}
+              >
+                <Text variant="body" color={option.value === language ? palette.primary : palette.text}>{option.label}</Text>
+                {option.value === language ? <Ionicons name="checkmark-circle" size={20} color={palette.primary} /> : null}
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -140,4 +175,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: palette.border, marginLeft: 52 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: spacing.xl },
+  languageDropdown: { backgroundColor: palette.surface, borderRadius: radii.lg, padding: spacing.lg, borderWidth: 1, borderColor: palette.border },
+  languageSubtitle: { marginTop: spacing.xs, marginBottom: spacing.md },
+  languageOption: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, borderRadius: radii.sm },
+  languageOptionActive: { backgroundColor: palette.primarySoft },
 });

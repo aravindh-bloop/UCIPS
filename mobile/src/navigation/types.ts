@@ -13,6 +13,9 @@ export type CitizenStackParamList = {
   ComplaintDetail: { complaintId: number };
   Menu: undefined;
   Notifications: undefined;
+  MyFinance: undefined;
+  BondsList: undefined;
+  BondDetail: { bondId: number };
 };
 
 export type CitizenTabParamList = {
@@ -26,6 +29,9 @@ export type AuthorityStackParamList = {
   AuthorityTabs: undefined;
   HotspotDetail: { clusterId: number };
   ComplaintDetail: { complaintId: number };
+  SchemeClusters: undefined;
+  BondsList: undefined;
+  BondDetail: { bondId: number };
 };
 
 export type AuthorityTabParamList = {

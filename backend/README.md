@@ -1,4 +1,5 @@
-# UCIPS Backend
+
+ UCIPS Backend
 
 FastAPI backend for UCIPS (Unified Citizen-led Infrastructure Prioritization System). This covers the full pipeline: citizen complaint intake (text/voice/image) → AI extraction → demand clustering → evidence validation → project generation → prioritization → budget optimization. See [`../TASKS.md`](../TASKS.md) for build status and what's real vs. simulated, and [`API_CONTRACT.md`](API_CONTRACT.md) for the full endpoint reference.
 

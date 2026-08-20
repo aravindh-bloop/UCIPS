@@ -12,4 +12,5 @@ export type { Segment } from './SegmentedControl';
 export { EmptyState } from './EmptyState';
 export { ToastProvider, useToast } from './Toast';
 export { StatCard, StatRow } from './StatCard';
+export { ProgressTracker } from './ProgressTracker';
 export { HeroBanner } from './HeroBanner';

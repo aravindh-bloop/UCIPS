@@ -17,7 +17,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 export default function RegisterScreen({ navigation }: Props) {
   const { registerStart, registerVerify } = useAuth();
   const toast = useToast();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const ROLES: { value: Role; label: string; description: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { value: 'citizen', label: t('register.roleCitizen'), description: t('register.roleCitizenDesc'), icon: 'person' },
@@ -56,7 +56,7 @@ export default function RegisterScreen({ navigation }: Props) {
         phone: phone.trim(),
         password,
         role,
-        preferred_language: 'en',
+        preferred_language: language,
         aadhaar_number: aadhaar.trim(),
       });
       haptics.success();

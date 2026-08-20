@@ -1,4 +1,3 @@
-import BrandSplash from '../components/BrandSplash';
 import { useAuth } from '../auth/AuthContext';
 import AuthorityStack from './AuthorityStack';
 import AuthStack from './AuthStack';
@@ -8,7 +7,7 @@ export default function RootNavigator() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <BrandSplash message="Restoring your session" />;
+    return null;
   }
 
   if (!user) {

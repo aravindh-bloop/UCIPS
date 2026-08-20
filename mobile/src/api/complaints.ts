@@ -1,5 +1,5 @@
 import { request, uploadFile } from './client';
-import { ComplaintOut, FeedbackOut } from './types';
+import { ComplaintOut, ComplaintProgressOut, FeedbackOut } from './types';
 
 export interface SubmitTextComplaint {
   text: string;
@@ -29,7 +29,13 @@ export function submitFeedback(token: string, complaintId: number, rating: numbe
 }
 
 export function getFeedback(token: string, complaintId: number): Promise<FeedbackOut> {
-  return request<FeedbackOut>(`/api/complaints/${complaintId}/feedback`, { token });
+  // 404 here just means "no feedback submitted yet" -- a normal, expected state for most
+  // complaints, not a real error, so it shouldn't be logged like one.
+  return request<FeedbackOut>(`/api/complaints/${complaintId}/feedback`, { token, expectedStatuses: [404] });
+}
+
+export function getProgress(token: string, complaintId: number): Promise<ComplaintProgressOut> {
+  return request<ComplaintProgressOut>(`/api/complaints/${complaintId}/progress`, { token });
 }
 
 export function answerFollowUp(token: string, complaintId: number, question: string, answer: string): Promise<ComplaintOut> {

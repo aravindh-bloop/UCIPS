@@ -4,8 +4,16 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPExcepti
 from google.genai.errors import APIError
 from sqlalchemy.orm import Session
 
-from app.db.models import Complaint, Feedback, User
-from app.db.schemas import ComplaintCreate, ComplaintOut, FeedbackCreate, FeedbackOut, FollowUpAnswer
+from app.db.models import BudgetRun, BudgetRunProject, Complaint, Feedback, Project, User
+from app.db.schemas import (
+    ComplaintCreate,
+    ComplaintOut,
+    ComplaintProgressOut,
+    FeedbackCreate,
+    FeedbackOut,
+    FollowUpAnswer,
+    ProgressStage,
+)
 from app.db.session import SessionLocal, get_db
 from app.security import get_current_user
 from app.services.clustering import recompute_all_clusters
@@ -258,6 +266,115 @@ def get_complaint(
     if current_user.role == "citizen" and complaint.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your complaint")
     return complaint
+
+
+@router.get("/{complaint_id}/progress", response_model=ComplaintProgressOut)
+def get_complaint_progress(
+    complaint_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delivery-tracker style view of where a citizen's report actually is in the pipeline.
+
+    Every stage is derived from real pipeline state (cluster membership, generated project,
+    inclusion in an approved budget run) rather than a stored progress field, so the tracker
+    can't drift out of sync with what the system actually did. Stages after the first
+    incomplete one are 'pending' -- the pipeline is strictly sequential, so a later stage can
+    never be reached without the earlier ones."""
+    complaint = db.get(Complaint, complaint_id)
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    if current_user.role == "citizen" and complaint.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your complaint")
+
+    cluster = complaint.cluster
+    project = (
+        db.query(Project).filter(Project.cluster_id == cluster.id).order_by(Project.created_at.desc()).first()
+        if cluster
+        else None
+    )
+
+    funded_link = None
+    if project:
+        funded_link = (
+            db.query(BudgetRunProject)
+            .join(BudgetRun, BudgetRunProject.budget_run_id == BudgetRun.id)
+            .filter(
+                BudgetRunProject.project_id == project.id,
+                BudgetRunProject.included.is_(True),
+                BudgetRun.status == "approved",
+            )
+            .first()
+        )
+
+    raw_stages: list[tuple[str, str, bool, str | None, object]] = [
+        (
+            "received",
+            "Report received",
+            True,
+            f"Reference {complaint.reference_code}",
+            complaint.created_at,
+        ),
+        (
+            "analysed",
+            "AI analysed your report",
+            complaint.category is not None,
+            f"Classified as {complaint.category.replace('_', ' ')}, severity {complaint.severity}/5"
+            if complaint.category
+            else None,
+            complaint.created_at if complaint.category else None,
+        ),
+        (
+            "clustered",
+            "Grouped with nearby reports",
+            cluster is not None,
+            f"{cluster.complaint_count} reports in this {cluster.category.replace('_', ' ')} hotspot"
+            if cluster
+            else "Waiting for other reports in your area",
+            cluster.created_at if cluster else None,
+        ),
+        (
+            "project",
+            "Project proposed",
+            project is not None,
+            project.title if project else None,
+            project.created_at if project else None,
+        ),
+        (
+            "funded",
+            "Approved for funding",
+            funded_link is not None,
+            f"Priority {project.priority_score}/10, Rs {project.estimated_cost:,.0f} allocated"
+            if funded_link and project
+            else (f"Ranked {project.priority_score}/10, awaiting budget approval" if project else None),
+            funded_link.budget_run.created_at if funded_link else None,
+        ),
+        (
+            "resolved",
+            "Work completed",
+            complaint.status == "resolved",
+            None,
+            None,
+        ),
+    ]
+
+    stages = []
+    seen_incomplete = False
+    for key, label, done, detail, at in raw_stages:
+        if done and not seen_incomplete:
+            state = "done"
+        elif not seen_incomplete:
+            state = "current"
+            seen_incomplete = True
+        else:
+            state = "pending"
+        stages.append(ProgressStage(key=key, label=label, state=state, detail=detail, at=at))
+
+    return ComplaintProgressOut(
+        complaint_id=complaint.id,
+        reference_code=complaint.reference_code,
+        stages=stages,
+    )
 
 
 @router.post("/{complaint_id}/feedback", response_model=FeedbackOut, status_code=201)

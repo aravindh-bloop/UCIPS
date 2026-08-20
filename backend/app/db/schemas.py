@@ -84,6 +84,20 @@ class FollowUpAnswer(BaseModel):
     answer: str
 
 
+class ProgressStage(BaseModel):
+    key: str
+    label: str
+    state: str  # done | current | pending
+    detail: str | None = None
+    at: datetime | None = None
+
+
+class ComplaintProgressOut(BaseModel):
+    complaint_id: int
+    reference_code: str
+    stages: list[ProgressStage]
+
+
 class ClusterOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -149,3 +163,117 @@ class BudgetRunOut(BaseModel):
     created_at: datetime
     selected: list[ProjectOut] = []
     excluded: list[ProjectOut] = []
+
+
+# ---- My Finance module ----
+
+
+class SchemeDiscoverRequest(BaseModel):
+    profession: str
+    state: str
+    age: int | None = None
+    notes: str | None = None
+
+
+class SchemeSource(BaseModel):
+    title: str
+    uri: str
+
+
+class SchemeItem(BaseModel):
+    name: str
+    provider: str
+    eligibility: str
+    benefit: str
+    how_to_apply: str
+
+
+class SchemeDiscoverResponse(BaseModel):
+    query_id: int
+    schemes: list[SchemeItem]
+    sources: list[SchemeSource]
+    cached: bool
+    grounded: bool
+
+
+class SchemeGrievanceCreate(BaseModel):
+    scheme_name: str
+    text: str
+
+
+class SchemeGrievanceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    scheme_name: str
+    raw_text: str
+    failure_description: str | None
+    follow_up_question: str | None
+    status: str
+    created_at: datetime
+
+
+class SchemeGrievanceFollowUp(BaseModel):
+    question: str
+    answer: str
+
+
+class SchemeGrievanceClusterOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    scheme_name: str
+    failure_signature: str
+    member_count: int
+    escalation_summary: str | None
+    created_at: datetime
+
+
+# ---- Infrastructure Bonds + Equity Monitor (static demo data) ----
+
+
+class BondInvestmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    investor_name: str
+    income_bracket: str
+    amount: float
+    aadhaar_verified: bool
+    verification_status: str
+    stage: str
+    invested_at: datetime
+    tracker: list[ProgressStage] = []
+
+
+class EquityBreakdownOut(BaseModel):
+    low_amount: float
+    middle_amount: float
+    high_amount: float
+    low_count: int
+    middle_count: int
+    high_count: int
+    equity_gap_flagged: bool
+    equity_gap_reason: str | None
+
+
+class BondOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    project_id: int | None
+    project_title: str | None = None
+    title: str
+    description: str
+    target_amount: float
+    raised_amount: float
+    interest_rate: float
+    tenure_years: int
+    status: str
+    investor_count: int
+    created_at: datetime
+
+
+class BondDetailOut(BondOut):
+    investments: list[BondInvestmentOut]
+    equity: EquityBreakdownOut

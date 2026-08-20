@@ -48,7 +48,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
   const { token } = useAuth();
   const toast = useToast();
   const insets = useSafeAreaInsets();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const MODES: Segment<Mode>[] = [
     { value: 'text', label: t('newComplaint.modeText'), icon: '📝' },
@@ -219,9 +219,14 @@ export default function NewComplaintScreen({ navigation }: Props) {
     try {
       let complaint: ComplaintOut;
       if (mode === 'text') {
-        complaint = await complaintsApi.submitText(token, { text: text.trim(), lat: coords.lat, lng: coords.lng, language: 'en' });
+        complaint = await complaintsApi.submitText(token, { text: text.trim(), lat: coords.lat, lng: coords.lng, language });
       } else if (mode === 'voice') {
-        complaint = await complaintsApi.submitVoice(token, { uri: recordedUri!, lat: coords.lat, lng: coords.lng, languageCode: 'unknown' });
+        complaint = await complaintsApi.submitVoice(token, {
+          uri: recordedUri!,
+          lat: coords.lat,
+          lng: coords.lng,
+          languageCode: language === 'hi' ? 'hi-IN' : language === 'ta' ? 'ta-IN' : language === 'te' ? 'te-IN' : language === 'ml' ? 'ml-IN' : language === 'kn' ? 'kn-IN' : language === 'bn' ? 'bn-IN' : language === 'mr' ? 'mr-IN' : language === 'gu' ? 'gu-IN' : language === 'pa' ? 'pa-IN' : 'en-IN',
+        });
       } else {
         complaint = await complaintsApi.submitImage(token, {
           uri: image!.uri,
@@ -229,6 +234,7 @@ export default function NewComplaintScreen({ navigation }: Props) {
           lat: coords.lat,
           lng: coords.lng,
           caption: caption.trim() || undefined,
+          language,
         });
       }
       setResult(complaint);

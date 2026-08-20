@@ -1,15 +1,22 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Button, Card, Screen, Text } from '../components/ui';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n';
+import { localeForLanguage } from '../i18n/locale';
+import { AuthorityStackParamList, CitizenStackParamList } from '../navigation/types';
 import { gradients, palette, radii, spacing, stagger, TAB_BAR_HEIGHT } from '../theme';
+
+type ProfileNav = NativeStackNavigationProp<CitizenStackParamList | AuthorityStackParamList>;
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const { language, t } = useLanguage();
+  const navigation = useNavigation<ProfileNav>();
 
   const initials = (user?.name ?? '?')
     .split(' ')
@@ -58,18 +65,37 @@ export default function ProfileScreen() {
           <View style={styles.details}>
             <DetailRow icon="call-outline" label={t('profile.phone')} value={user?.phone ?? '—'} />
             <DetailRow icon="mail-outline" label={t('profile.email')} value={user?.email ?? '—'} />
-            <DetailRow icon="language-outline" label={t('profile.language')} value={language === 'ta' ? t('language.tamil') : t('language.english')} />
+            <DetailRow icon="language-outline" label={t('profile.language')} value={language === 'ta' ? t('language.tamil') : language === 'hi' ? t('language.hindi') : language === 'te' ? t('language.telugu') : language === 'ml' ? t('language.malayalam') : language === 'kn' ? t('language.kannada') : t('language.english')} />
             <DetailRow
               icon="calendar-outline"
               label={t('profile.memberSince')}
-              value={user ? new Date(user.created_at).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+              value={user ? new Date(user.created_at).toLocaleDateString(localeForLanguage(language), { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
               last
             />
           </View>
         </Card>
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(stagger(2)).duration(420)} style={styles.aboutWrap}>
+      <Animated.View entering={FadeInDown.delay(stagger(2)).duration(420)}>
+        <Pressable onPress={() => navigation.navigate('BondsList')}>
+          <Card style={styles.bondsCard}>
+            <View style={styles.bondsRow}>
+              <View style={[styles.bondsIcon, { backgroundColor: palette.primarySoft }]}>
+                <Ionicons name="trending-up-outline" size={22} color={palette.primary} />
+              </View>
+              <View style={styles.bondsText}>
+                <Text variant="label">{t('bonds.title')}</Text>
+                <Text variant="caption" muted numberOfLines={1}>
+                  {t('bonds.profileCardSubtitle')}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={palette.textFaint} />
+            </View>
+          </Card>
+        </Pressable>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(stagger(3)).duration(420)} style={styles.aboutWrap}>
         <Card>
           <Text variant="overline" muted>
             {t('profile.about')}
@@ -80,7 +106,7 @@ export default function ProfileScreen() {
         </Card>
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(stagger(3)).duration(420)} style={styles.logoutWrap}>
+      <Animated.View entering={FadeInDown.delay(stagger(4)).duration(420)} style={styles.logoutWrap}>
         <Button title={t('profile.logOut')} onPress={confirmLogout} variant="danger" icon="→" />
       </Animated.View>
     </Screen>
@@ -151,6 +177,17 @@ const styles = StyleSheet.create({
   },
   rowLabel: { flex: 1 },
   rowValue: { maxWidth: '52%', textAlign: 'right' },
+  bondsCard: { marginBottom: spacing.base },
+  bondsRow: { flexDirection: 'row', alignItems: 'center' },
+  bondsIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  bondsText: { flex: 1 },
   aboutWrap: { marginBottom: spacing.base },
   about: { marginTop: spacing.xs },
   logoutWrap: { marginTop: spacing.sm, marginBottom: spacing.xl },

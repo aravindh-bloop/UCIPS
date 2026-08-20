@@ -183,3 +183,115 @@ class Feedback(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     complaint: Mapped["Complaint"] = relationship(back_populates="feedback")
+
+
+# ---- "My Finance" module: scheme discovery + benefit-delivery failure diagnosis ----
+# Deliberately no seeded/hardcoded scheme table -- every scheme name and eligibility rule in
+# this module comes from a live, Google-Search-grounded Gemini call at query time (see
+# services/scheme_discovery.py). These tables only cache real query results and store citizen-
+# reported delivery failures; they never store scheme content we authored ourselves.
+
+
+class SchemeQuery(Base):
+    """A cached result of a real grounded scheme lookup, keyed by profile so repeat lookups for
+    the same profession/state don't re-spend Gemini Search quota within the cache window."""
+
+    __tablename__ = "scheme_queries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    profession: Mapped[str] = mapped_column(String(128))
+    state: Mapped[str] = mapped_column(String(64))
+    age: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result_json: Mapped[str] = mapped_column(Text)  # {"schemes": [...], "sources": [...]}
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class SchemeGrievanceCluster(Base):
+    """A group of benefit-delivery-failure reports that share a failure signature -- grouped by
+    embedding similarity (HDBSCAN over Gemini embeddings), not by any predefined taxonomy of
+    failure types, and not by geography (irrelevant here -- two people 200km apart can share the
+    exact same broken process, while neighbors can fail for unrelated reasons)."""
+
+    __tablename__ = "scheme_grievance_clusters"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    scheme_name: Mapped[str] = mapped_column(String(255))
+    failure_signature: Mapped[str] = mapped_column(Text)  # AI-synthesized shared-root-cause summary
+    member_count: Mapped[int] = mapped_column(Integer, default=0)
+    escalation_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    grievances: Mapped[list["SchemeGrievance"]] = relationship(back_populates="cluster")
+
+
+class SchemeGrievance(Base):
+    """A citizen report that an entitled benefit/scheme payout never arrived. Diagnosed via the
+    same follow-up-question reasoning pattern as complaint intake, then embedded for clustering
+    by failure signature rather than location."""
+
+    __tablename__ = "scheme_grievances"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    cluster_id: Mapped[int | None] = mapped_column(ForeignKey("scheme_grievance_clusters.id"), nullable=True)
+
+    scheme_name: Mapped[str] = mapped_column(String(255))
+    raw_text: Mapped[str] = mapped_column(Text)
+    failure_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    follow_up_question: Mapped[str | None] = mapped_column(Text, nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(ARRAY(Float), nullable=True)
+
+    status: Mapped[str] = mapped_column(String(32), default="received")
+    # received | diagnosed | clustered | escalated | resolved
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    user: Mapped["User | None"] = relationship()
+    cluster: Mapped["SchemeGrievanceCluster | None"] = relationship(back_populates="grievances")
+
+
+# ---- Infrastructure Bonds + Equity Monitor ----
+# Explicitly static/demo data, per direct instruction -- there is no real bond issuance,
+# trading, or payment integration here (and no real one to honestly build against for a
+# hackathon), and no actual money moves anywhere in this module. It exists to demonstrate the
+# workflow -- an authority-facing equity monitor over who is funding public infrastructure via
+# bonds -- not to function as a real financial product.
+
+
+class Bond(Base):
+    __tablename__ = "bonds"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id"), nullable=True)
+
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str] = mapped_column(Text)
+    target_amount: Mapped[float] = mapped_column(Float)
+    interest_rate: Mapped[float] = mapped_column(Float)  # annual %, e.g. 7.5
+    tenure_years: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(32), default="open")
+    # open | fully_subscribed | closed
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    project: Mapped["Project | None"] = relationship()
+    investments: Mapped[list["BondInvestment"]] = relationship(back_populates="bond")
+
+
+class BondInvestment(Base):
+    __tablename__ = "bond_investments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    bond_id: Mapped[int] = mapped_column(ForeignKey("bonds.id"))
+
+    investor_name: Mapped[str] = mapped_column(String(255))
+    income_bracket: Mapped[str] = mapped_column(String(16))  # low | middle | high
+    amount: Mapped[float] = mapped_column(Float)
+    aadhaar_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    verification_status: Mapped[str] = mapped_column(String(32), default="pending")
+    # pending | verified | flagged
+    stage: Mapped[str] = mapped_column(String(32), default="invested")
+    # invested | identity_verified | funds_confirmed | allocated | project_underway | matured
+    invested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    bond: Mapped["Bond"] = relationship(back_populates="investments")

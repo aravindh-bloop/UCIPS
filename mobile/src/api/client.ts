@@ -17,6 +17,10 @@ interface RequestOptions {
   method?: string;
   body?: unknown;
   token?: string | null;
+  /** Status codes that represent a normal, expected outcome for this call (e.g. 404 for "no
+   * feedback submitted yet") -- logged quietly instead of as a console error, though the
+   * caller still gets the thrown ApiError to handle either way. */
+  expectedStatuses?: number[];
 }
 
 /**
@@ -39,7 +43,7 @@ function handleUnauthorized(status: number, token?: string | null): void {
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, token } = options;
+  const { method = 'GET', body, token, expectedStatuses } = options;
   const isFormData = body instanceof FormData;
 
   const headers: Record<string, string> = {};
@@ -68,7 +72,11 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const data = text ? JSON.parse(text) : null;
 
   if (!res.ok) {
-    console.error(`[api] <- ${method} ${path} ${res.status}`, data);
+    if (expectedStatuses?.includes(res.status)) {
+      console.log(`[api] <- ${method} ${path} ${res.status} (expected)`);
+    } else {
+      console.error(`[api] <- ${method} ${path} ${res.status}`, data);
+    }
     handleUnauthorized(res.status, token);
     throw new ApiError(res.status, data);
   }

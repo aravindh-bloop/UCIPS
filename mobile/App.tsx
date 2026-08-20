@@ -11,10 +11,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import BrandSplash from './src/components/BrandSplash';
 import { ToastProvider } from './src/components/ui';
 import { AuthProvider } from './src/auth/AuthContext';
 import { LanguageProvider } from './src/i18n';
@@ -41,40 +40,32 @@ export default function App() {
   }, [ready]);
 
   const [showCover, setShowCover] = useState(true);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowCover(false);
-    }, 3000);
+    const timer = setTimeout(() => setShowCover(false), 3000);
     return () => clearTimeout(timer);
   }, []);
-
-  if (showCover) {
-    return (
-      <View style={styles.coverContainer}>
-        <Image source={require('./assets/cover.png')} style={styles.coverImage} resizeMode="cover" />
-      </View>
-    );
-  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar style="light" />
-        {!ready ? (
-          <BrandSplash />
-        ) : (
-          <ToastProvider>
-            <ThemeProvider>
-              <LanguageProvider>
-                <AuthProvider>
-                  <NavigationContainer theme={navigationTheme}>
-                    <RootNavigator />
-                  </NavigationContainer>
-                </AuthProvider>
-              </LanguageProvider>
-            </ThemeProvider>
-          </ToastProvider>
-        )}
+        <ToastProvider>
+          <ThemeProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <NavigationContainer theme={navigationTheme}>
+                  <RootNavigator />
+                </NavigationContainer>
+              </AuthProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </ToastProvider>
+        {showCover || !ready ? (
+          <View style={styles.coverContainer}>
+            <Image source={require('./assets/cover.png')} style={styles.coverImage} resizeMode="cover" />
+          </View>
+        ) : null}
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -82,7 +73,11 @@ export default function App() {
 
 const styles = StyleSheet.create({
   coverContainer: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',

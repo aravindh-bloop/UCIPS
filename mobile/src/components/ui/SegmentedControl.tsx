@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { LayoutChangeEvent, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -8,7 +9,10 @@ import { Text } from './Text';
 export interface Segment<T extends string> {
   value: T;
   label: string;
+  /** @deprecated use `iconName` for a real vector icon instead of an emoji glyph. */
   icon?: string;
+  /** Ionicons glyph name, rendered as a real vector icon rather than an emoji. */
+  iconName?: keyof typeof Ionicons.glyphMap;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -53,10 +57,20 @@ export function SegmentedControl<T extends string>({ segments, value, onChange, 
               onChange(segment.value);
             }}
           >
-            <Text variant="label" color={selected ? palette.primary : palette.textMuted}>
-              {segment.icon ? `${segment.icon}  ` : ''}
-              {segment.label}
-            </Text>
+            <View style={styles.segmentContent}>
+              {segment.iconName ? (
+                <Ionicons
+                  name={segment.iconName}
+                  size={14}
+                  color={selected ? palette.primary : palette.textMuted}
+                  style={styles.segmentIcon}
+                />
+              ) : null}
+              <Text variant="label" color={selected ? palette.primary : palette.textMuted}>
+                {segment.icon ? `${segment.icon}  ` : ''}
+                {segment.label}
+              </Text>
+            </View>
           </Pressable>
         );
       })}
@@ -82,4 +96,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
   },
   segment: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.md },
+  segmentContent: { flexDirection: 'row', alignItems: 'center' },
+  segmentIcon: { marginRight: 5 },
 });

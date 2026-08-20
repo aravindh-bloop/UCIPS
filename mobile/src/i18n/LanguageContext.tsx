@@ -1,13 +1,32 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { en, TranslationKey } from './en';
+import { bn } from './bn';
+import { mr } from './mr';
+import { gu } from './gu';
+import { pa } from './pa';
+import { hi } from './hi';
+import { ml } from './ml';
+import { kn } from './kn';
 import { ta } from './ta';
+import { te } from './te';
 
-export type Language = 'en' | 'ta';
+export type Language = 'en' | 'ta' | 'hi' | 'te' | 'ml' | 'kn' | 'bn' | 'mr' | 'gu' | 'pa';
 
 const STORAGE_KEY = 'ucips.language';
 
-const dictionaries: Record<Language, Record<TranslationKey, string>> = { en, ta };
+const dictionaries: Record<Language, Partial<Record<TranslationKey, string>>> = {
+  en,
+  ta,
+  hi,
+  te,
+  ml,
+  kn,
+  bn,
+  mr,
+  gu,
+  pa,
+};
 
 interface LanguageContextValue {
   language: Language;
@@ -25,7 +44,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (stored === 'en' || stored === 'ta') setLanguageState(stored);
+        if (['en', 'ta', 'hi', 'te', 'ml', 'kn', 'bn', 'mr', 'gu', 'pa'].includes(stored ?? '')) setLanguageState(stored as Language);
       } catch {
         // fall back to English if storage is unavailable
       }

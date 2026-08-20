@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { StyleSheet, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
 import Animated, {
@@ -13,7 +14,10 @@ import { Text } from './Text';
 interface InputProps extends Omit<TextInputProps, 'style'> {
   label: string;
   error?: string | null;
+  /** @deprecated use `iconName` for a real vector icon instead of an emoji glyph. */
   icon?: string;
+  /** Ionicons glyph name, rendered as a real vector icon rather than an emoji. */
+  iconName?: keyof typeof Ionicons.glyphMap;
   containerStyle?: ViewStyle;
   multilineHeight?: number;
 }
@@ -22,6 +26,7 @@ export function Input({
   label,
   error,
   icon,
+  iconName,
   containerStyle,
   value,
   multiline,
@@ -69,7 +74,11 @@ export function Input({
           multiline ? { height: multilineHeight, alignItems: 'flex-start', paddingTop: spacing.base } : null,
         ]}
       >
-        {icon ? <Text style={styles.icon}>{icon}</Text> : null}
+        {iconName ? (
+          <Ionicons name={iconName} size={18} color={palette.textMuted} style={styles.vectorIcon} />
+        ) : icon ? (
+          <Text style={styles.icon}>{icon}</Text>
+        ) : null}
         <View style={styles.fieldCol}>
           <Animated.Text style={[styles.label, labelStyle]} numberOfLines={1}>
             {label}
@@ -115,6 +124,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
   },
   icon: { fontSize: 17, marginRight: spacing.sm },
+  vectorIcon: { marginRight: spacing.sm },
   fieldCol: { flex: 1, justifyContent: 'center' },
   label: {
     fontFamily: fonts.medium,

@@ -22,6 +22,7 @@ import {
   HeroBanner,
 } from '../../components/ui';
 import { useLanguage } from '../../i18n';
+import { localeForLanguage } from '../../i18n/locale';
 import { TranslationKey } from '../../i18n/en';
 import { CitizenTabScreenProps } from '../../navigation/types';
 import { categoryStyle, palette, radii, spacing, stagger, TAB_BAR_HEIGHT } from '../../theme';
@@ -185,6 +186,24 @@ export default function CitizenHomeScreen({ navigation }: Props) {
               </View>
             </Animated.View>
 
+            <Animated.View entering={FadeInDown.delay(120).duration(420)}>
+              <Pressable
+                style={[styles.financeCard, { backgroundColor: palette.surface, borderColor: palette.border }]}
+                onPress={() => navigation.navigate('MyFinance')}
+              >
+                <View style={[styles.financeIcon, { backgroundColor: palette.primarySoft }]}>
+                  <Ionicons name="wallet-outline" size={22} color={palette.primary} />
+                </View>
+                <View style={styles.financeText}>
+                  <Text variant="label">{t('finance.title')}</Text>
+                  <Text variant="caption" muted numberOfLines={1}>
+                    {t('finance.homeCardSubtitle')}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={palette.textFaint} />
+              </Pressable>
+            </Animated.View>
+
             <Animated.View entering={FadeInDown.delay(140).duration(420)}>
               <Text variant="h3" style={styles.sectionLabel}>
                 {t('home.recentActivity')}
@@ -223,7 +242,7 @@ function ComplaintRow({ complaint, onPress }: { complaint: ComplaintOut; onPress
   const cat = categoryStyle(complaint.category);
   const catLabel = complaint.category ? t(`category.${complaint.category}` as TranslationKey) : cat.label;
   const created = new Date(complaint.created_at);
-  const when = created.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short' });
+  const when = created.toLocaleDateString(localeForLanguage(language), { day: 'numeric', month: 'short' });
 
   return (
     <Card onPress={onPress} accent={cat.color} style={styles.row}>
@@ -274,6 +293,23 @@ const styles = StyleSheet.create({
   quickReportHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   quickGrid: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
   quickTile: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.lg, borderRadius: radii.xl },
+  financeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  financeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  financeText: { flex: 1 },
   sectionLabel: { marginBottom: spacing.md },
   row: { marginBottom: spacing.md },
   rowTop: { flexDirection: 'row', alignItems: 'center' },

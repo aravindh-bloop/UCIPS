@@ -20,6 +20,7 @@ import {
 import { AuthorityTabScreenProps } from '../../navigation/types';
 import { categoryStyle, palette, spacing, stagger, TAB_BAR_HEIGHT } from '../../theme';
 import { useLanguage } from '../../i18n';
+import { localeForLanguage } from '../../i18n/locale';
 
 type Props = AuthorityTabScreenProps<'Reports'>;
 
@@ -99,7 +100,7 @@ export default function AllComplaintsScreen({ navigation }: Props) {
         renderItem={({ item, index }) => {
           const cat = categoryStyle(item.category);
           const created = new Date(item.created_at);
-          const when = created.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short' });
+          const when = created.toLocaleDateString(localeForLanguage(language), { day: 'numeric', month: 'short' });
 
           return (
             <Animated.View entering={FadeInDown.delay(stagger(index)).duration(420)}>

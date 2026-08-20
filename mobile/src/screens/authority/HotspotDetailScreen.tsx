@@ -8,6 +8,7 @@ import { Card, CategoryChip, EmptyState, SeverityChip, SkeletonList, Text, useTo
 import { AuthorityStackParamList } from '../../navigation/types';
 import { palette, spacing, stagger } from '../../theme';
 import { useLanguage } from '../../i18n';
+import { localeForLanguage } from '../../i18n/locale';
 
 type Props = NativeStackScreenProps<AuthorityStackParamList, 'HotspotDetail'>;
 
@@ -72,7 +73,7 @@ export default function HotspotDetailScreen({ route }: Props) {
                 <SeverityChip severity={item.severity} size="sm" />
                 <CategoryChip category={item.category} size="sm" />
                 <Text variant="caption" faint style={styles.date}>
-                  {new Date(item.created_at).toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { day: 'numeric', month: 'short' })}
+                  {new Date(item.created_at).toLocaleDateString(localeForLanguage(language), { day: 'numeric', month: 'short' })}
                 </Text>
               </View>
             </Card>

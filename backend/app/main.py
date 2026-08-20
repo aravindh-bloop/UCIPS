@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import auth, budget, clusters, complaints, ping, phone, projects
+from app.routers import auth, bonds, budget, clusters, complaints, finance, ping, phone, projects
 
 app = FastAPI(title="UCIPS Backend", version="0.1.0")
 
@@ -27,3 +27,5 @@ app.include_router(phone.router)
 app.include_router(clusters.router)
 app.include_router(projects.router)
 app.include_router(budget.router)
+app.include_router(finance.router)
+app.include_router(bonds.router)
